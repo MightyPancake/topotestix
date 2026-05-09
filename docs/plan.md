@@ -2,12 +2,11 @@
 
 ## Phase 1: Foundation
 
-- [ ] combinators library + tests
-- [ ] fuzzer (seed + target → flat attrset, pure function, no cluster logic)
-- [ ] fuzzer CLI + tests
-- [ ] properties framework (minimal, just the injection mechanism)
+- [x] combinators library + tests
+- [x] fuzzer (seed + target → flat attrset, pure function, no cluster logic)
+- [x] fuzzer tests
+- [x] properties framework (minimal, just the injection mechanism)
 - [ ] runner
-- [ ] runner CLI
 - [ ] runner tests
 - [ ] simple SUT target (nginx or trivial service)
 - [ ] end-to-end smoke test (manual single seed: fuzzer → runner → report)
@@ -31,9 +30,21 @@
 
 - [ ] orchestrator shrinking
 
-## Phase 6: Scale
+## Phase 6: Text User Interface
+
+- [ ] fuzzer CLI
+- [ ] runner CLI
+- [ ] orchestrator CLI & TUI
+
+## Phase 7: Scale
 
 - [ ] orchestrator multi-execution
+
+## Phase 8: Extra Features
+
+- [ ] failure-reproducing flake
+- [ ] fuzzing regular nixos configurations
+- [ ] runner as http service
 
 ## Notes
 
@@ -50,3 +61,11 @@
 - Orchestrator starts as single orchestrator.py with argparse; later packaged as Nix-managed Python package (pyproject.toml)
 - Nix testing via nix-unit (test attributes prefixed with `test`, expr/expected format)
 - Python ↔ Nix interface: `nix eval --json` for fuzzer and expandTopology calls
+
+## Extra Features Explanation
+
+- fuzzing regular nixos configurations - auto-resolving option variants from NixOS documentation so users only need to point at a configuration and specify which options to fuzz. Current targets require manual option variant specification, and this feature would eliminate that.
+
+- failure-reproducing flake - outputing nix flake that will reproduce found failure
+
+- runner as http service - is this meant to allow remote/in-parallel test execution during shrinking
