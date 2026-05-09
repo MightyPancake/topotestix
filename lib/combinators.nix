@@ -164,21 +164,32 @@ in
   #
   bool = [ true false ];
 
-  # range : int -> int -> [int]
+  # range : int -> int -> int -> [int]
   #
-  # Generate an inclusive list of integers from min to max.
-  # Useful as a fuzz target for numeric options.
+  # Generate a list of integers from min to max with a given step.
+  # Useful as a fuzz target for numeric options where you want regular spacing.
+  #
+  # Note: for irregular values (e.g. powers of 2: 512, 1024, 2048, 4096),
+  # use oneOf instead — range only produces arithmetic sequences.
   #
   # Example:
-  #   range 1 5    # => [ 1 2 3 4 5 ]
-  #   range 0 0    # => [ 0 ]
-  #   range 512 512  # => [ 512 ] (single option, always chosen)
+  #   range 0 10 1    # => [ 0 1 2 3 4 5 6 7 8 9 10 ]
+  #   range 0 10 2    # => [ 0 2 4 6 8 10 ]
+  #   range 0 10 5    # => [ 0 5 10 ]
+  #   range 512 512 1 # => [ 512 ] (single option, always chosen)
   #
   # Usage in target spec:
-  #   resolve "" { virtualisation.memorySize = range 512 4096; }
-  #   # => { virtualisation.memorySize = 1024; } (one of [512 1024 2048 4096])
+  #   resolve "" { virtualisation.memorySize = range 512 4096 512; }
+  #   # => { virtualisation.memorySize = 1024; } (one of [512 1024 ... 4096])
   #
-  range = min: max: lib.genList (i: min + i) (max - min + 1);
+  #   # For powers of 2, use oneOf:
+  #   resolve "" { virtualisation.memorySize = oneOf [ 512 1024 2048 4096 ]; }
+  #
+  range = min: max: step:
+    let
+      count = (max - min) / step + 1;
+    in
+    lib.genList (i: min + i * step) count;
 
   # oneOf : [a] -> [a]
   #
