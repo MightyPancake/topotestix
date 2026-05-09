@@ -1,4 +1,4 @@
-# TopoTestiX Implementation Plan
+# TopoTestix Implementation Plan
 
 ## Phase 1: Foundation
 

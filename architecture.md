@@ -1,4 +1,4 @@
-# TopoTestiX Architecture
+# TopoTestix Architecture
 
 ## Module Overview
 
