@@ -8,8 +8,8 @@
 - [x] properties framework (minimal, just the injection mechanism)
 - [x] merge module (`lib/merge.nix`) — `mkForceAttrs` and `mergeConfigs` (separate from runner, same pattern as expand-topology being separate from fuzzer)
 - [x] merge module tests
-- [ ] runner (`lib/runner.nix`) — `composeTestScript` and `run`
-- [ ] runner tests
+- [x] runner (`lib/runner.nix`) — `composeTestScript` and `run`
+- [x] runner tests - test script correctness
 - [ ] nginx SUT target update (test-script.py uses `_check()`, properties wired)
 - [ ] end-to-end smoke test (flake.nix: fuzzer → merge → runner → build → report.json)
 
