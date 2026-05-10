@@ -126,8 +126,10 @@ topotestix/
 ├── lib/                          # Core Nix library
 │   ├── fuzzer.nix                # seed + target → flat attrset (pure, no cluster awareness)
 │   ├── expand-topology.nix       # topology-map → per-node VLAN configs (deterministic, no seed)
+│   ├── merge.nix                 # mkForceAttrs, mergeConfigs — three-layer config composition
 │   ├── combinators.nix           # choose, range, bool, oneOf, dependent
-│   └── properties.nix            # Property → Python assertion helpers
+│   ├── properties.nix            # Property → Python assertion helpers
+│   └── runner.nix                # composeTestScript, run — wraps runNixOSTest with harness
 │
 ├── targets/                      # Fuzz target specs (define what to fuzz)
 │   ├── config/                   # Per-node config targets
@@ -142,7 +144,7 @@ topotestix/
 ├── orchestrator/                 # Orchestrator (Python)
 │   └── orchestrator.py           # CLI entry point, seed derivation, three-layer merge, shrinking
 │
-├── flake.nix                     # Nix entry point — composes fuzzer + runner
+├── flake.nix                     # Nix entry point — composes fuzzer + merge + runner
 └── README.md
 ```
 
@@ -268,38 +270,27 @@ The target spec author defines which VLAN set combinations are valid for the SUT
 
 ---
 
+### Merge
+
+Pure deterministic function for three-layer config composition. See [merge.md](merge.md) for full design.
+
+**`mkForceAttrs`**: Recursively applies `lib.mkForce` to all leaf values. Used on fuzzed config and topology layers so they override base values.
+
+**`mergeConfigs`**: `base ⊕ config ⊕ topology`. Base is plain, config and topology are mkForce'd before merging. Topology wins over config on conflicts. Both config and topology use mkForce (priority 50) — on key conflicts, topology wins by position (last `recursiveUpdate`), not by priority. In practice config and topology fuzz different dimensions (services/resources vs network/VLAN), so conflicts should not arise. See [merge.md](merge.md) for details.
+
+Same pattern as `expandTopology` — pure function, no seed, no randomness. Called by the orchestrator (or in flake.nix), not by the runner.
+
+---
+
 ### Runner
 
-Based on NixOS `testers.runNixOSTest`. Thin wrapper that composes inputs into a runnable test.
+Based on NixOS `testers.runNixOSTest`. Thin wrapper that composes inputs into a runnable test, injects property helpers, and produces structured reports. See [runner.md](runner.md) for full design.
 
-**Inputs:**
-- `nodeConfigs` — per-node NixOS configurations (base ⊕ config ⊕ topology, merged by orchestrator)
-- `testScript` — Python test procedure provided by the user, as-is (no mutation)
-- `properties` — Nix expressions generating Python assertion helper functions
+**Inputs:** `nodeConfigs`, `testScript`, `properties`, `name`, `reportNode`
 
-**Output:**
-- `report.json` — structured test results (which assertions passed/failed, which phase)
-- `stdout` — fallback if report.json is not generated
+**Output:** `report.json` (structured test results via `copy_from_vm`), test derivation pass/fail
 
-The runner injects property helper functions into the testScript. Properties are called at explicit checkpoints within the test procedure:
-
-```python
-# testScript (user-provided procedure)
-setup_cluster()
-produce_messages()
-
-# property checkpoint injected by runner
-check_no_message_lost(produced, consumed)
-
-restart_broker()
-
-# another checkpoint
-check_no_message_lost(produced, consumed)
-```
-
-Properties are **not** systemd services on nodes. They are Python helper functions defined in Nix, injected into the testScript by the runner. This gives them cluster-level visibility (all nodes accessible from one place) and precise timing (called at specific test phases).
-
-If continuous monitoring is needed in the future, a lightweight systemd service on each node can write observations to a file, and the testScript reads them at checkpoints.
+Properties are called at explicit checkpoints via `_check()` — not auto-appended. The `_check()` function catches all exceptions and does not re-raise, so all properties are always evaluated even after failures.
 
 ---
 
