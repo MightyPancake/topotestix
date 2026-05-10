@@ -72,11 +72,29 @@
               result = machine.succeed("/run/current-system/sw/bin/binary")
               print(result)
 
+              result_pass =machine.succeed("nix --version")
+              result_failure =machine.succeed("nix --false-flag")
+
               result = machine.succeed("time /run/current-system/sw/bin/binary")
               print(result)
 
               result = machine.succeed("/run/current-system/sw/bin/binary")
               print(result)
+              import time
+
+
+              start = time.time()       # wall-clock time
+              result = machine.succeed("/run/current-system/sw/bin/binary")
+              end = time.time()
+              print(f"Elapsed: {end - start} seconds")
+
+              machine.succeed(f"echo 'Elapsed: {end - start} seconds' > /tmp/output")
+              machine.succeed(f"echo '{result}' >> /tmp/output")
+              machine.succeed(f"echo '{result_pass}' >> /tmp/output")
+              machine.succeed(f"echo '{result_failure}' >> /tmp/output")
+
+              machine.copy_from_vm("/tmp/output", "output")
+
             '';
         };
     };
