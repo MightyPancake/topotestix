@@ -6,8 +6,8 @@
 - [x] fuzzer (seed + target → flat attrset, pure function, no cluster logic)
 - [x] fuzzer tests
 - [x] properties framework (minimal, just the injection mechanism)
-- [ ] merge module (`lib/merge.nix`) — `mkForceAttrs` and `mergeConfigs` (separate from runner, same pattern as expand-topology being separate from fuzzer)
-- [ ] merge module tests
+- [x] merge module (`lib/merge.nix`) — `mkForceAttrs` and `mergeConfigs` (separate from runner, same pattern as expand-topology being separate from fuzzer)
+- [x] merge module tests
 - [ ] runner (`lib/runner.nix`) — `composeTestScript` and `run`
 - [ ] runner tests
 - [ ] nginx SUT target update (test-script.py uses `_check()`, properties wired)
