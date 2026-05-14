@@ -16,6 +16,15 @@
 
       topotestixLib = import ./lib { inherit lib; };
 
+      runner = import ./lib/runner.nix { inherit pkgs lib; testers = pkgs.testers; };
+
+      nginxConfigTarget = import ./targets/config/nginx.nix { inherit lib; };
+      nginxBaseModule = import ./targets/nginx/module.nix;
+      nginxProperties = import ./targets/nginx/properties.nix { inherit lib; };
+      nginxTestScript = builtins.readFile ./targets/nginx/test-script.py;
+
+      fuzzedConfig = topotestixLib.fuzzer.fuzzer { seed = "5"; target = nginxConfigTarget; };
+
     in
     {
       lib = topotestixLib;
@@ -24,6 +33,21 @@
 
       packages.${system} = {
         default = pkgs.emptyDirectory;
+      };
+
+      nixosTests.${system} = {
+        nginx-smoke = runner.run {
+          nodeConfigs = {
+            machine = { pkgs, ... }:
+              topotestixLib.merge.mergeConfigs {
+                base = nginxBaseModule { inherit pkgs; };
+                config = fuzzedConfig;
+              };
+          };
+          testScript = nginxTestScript;
+          properties = [ nginxProperties.responds_to_http ];
+          name = "nginx-smoke";
+        };
       };
 
       checks.${system} = {

@@ -56,7 +56,7 @@ in
 
   testComposeTestScriptContainsReportFooter = {
     expr =
-      lib.hasInfix "copy_from_vm" simpleResult
+      lib.hasInfix "copy_from_machine" simpleResult
       && lib.hasInfix "/tmp/report.json" simpleResult
       && lib.hasInfix "base64 -d" simpleResult;
     expected = true;
@@ -65,14 +65,14 @@ in
   testComposeTestScriptReportNodeMachine = {
     expr =
       lib.hasInfix "machine.succeed" simpleResult
-      && lib.hasInfix "machine.copy_from_vm" simpleResult;
+      && lib.hasInfix "machine.copy_from_machine" simpleResult;
     expected = true;
   };
 
   testComposeTestScriptReportNodeCustom = {
     expr =
       lib.hasInfix "broker1.succeed" propsResult
-      && lib.hasInfix "broker1.copy_from_vm" propsResult;
+      && lib.hasInfix "broker1.copy_from_machine" propsResult;
     expected = true;
   };
 
@@ -98,7 +98,7 @@ in
 
   testComposeTestScriptPreambleBeforeFooter = {
     expr =
-      (indexOf "_report = []" simpleResult) < (indexOf "copy_from_vm" simpleResult);
+      (indexOf "_report = []" simpleResult) < (indexOf "copy_from_machine" simpleResult);
     expected = true;
   };
 

@@ -10,8 +10,8 @@
 - [x] merge module tests
 - [x] runner (`lib/runner.nix`) — `composeTestScript` and `run`
 - [x] runner tests - test script correctness
-- [ ] nginx SUT target update (test-script.py uses `_check()`, properties wired)
-- [ ] end-to-end smoke test (flake.nix: fuzzer → merge → runner → build → report.json)
+- [x] nginx SUT target update (test-script.py uses `_check()`, properties wired)
+- [x] end-to-end smoke test (flake.nix: fuzzer → merge → runner → build → report.json)
 
 ## Phase 2: Orchestration (basic)
 
@@ -60,7 +60,7 @@
 - Properties framework is minimal at first — just the injection mechanism into testScript
 - Runner composes testScript: harness preamble → property setup → user testScript → explicit `_check()` calls → report writing → assertion on failures
 - `_check()` catches all exceptions and does NOT re-raise — all properties always get evaluated
-- Report written via `copy_from_vm` to `$out/report.json`; JSON encoded as base64 to avoid shell escaping
+- Report written via `copy_from_machine` to `$out/report.json`; JSON encoded as base64 to avoid shell escaping
 - `composedProps.check` NOT auto-appended — user places `_check()` calls explicitly (explicit checkpoints)
 - Simple SUT (nginx) validates the pipeline end-to-end before bringing in Kafka's long build times
 - Smoke test is manual: run a single seed through fuzzer → merge → runner, verify report.json output

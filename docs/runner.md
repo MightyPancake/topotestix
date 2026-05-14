@@ -50,14 +50,13 @@ def _check(name, fn, *args, **kwargs):
 
 ### Report writing
 
-At the end of the testScript, the harness writes report.json inside the VM and copies it out.
- we need to handle shell escaping. The report JSON is base64-encoded inside Python, then decoded in the shell to avoid escaping issues:
+At the end of the testScript, the harness writes report.json inside the VM and copies it out using `copy_from_machine` (replaces deprecated `copy_from_vm`):
 
 ```python
 import base64
 encoded = base64.b64encode(json.dumps(_report).encode()).decode()
 machine.succeed(f"echo '{encoded}' | base64 -d > /tmp/report.json")
-machine.copy_from_vm("/tmp/report.json")
+machine.copy_from_machine("/tmp/report.json")
 ```
 
 The report lands at `$out/report.json` (accessible as `result/report.json` after `nix build`).
@@ -157,7 +156,7 @@ _check("nginx-responds-to-http", check_nginx_responds, machine)
 # --- report writing ---
 encoded = base64.b64encode(json.dumps(_report).encode()).decode()
 machine.succeed(f"echo '{encoded}' | base64 -d > /tmp/report.json")
-machine.copy_from_vm("/tmp/report.json")
+machine.copy_from_machine("/tmp/report.json")
 
 if not _all_passed:
     failed_names = ", ".join(r["name"] for r in _report if r["status"] == "failed")
@@ -171,7 +170,7 @@ if not _all_passed:
 | `_check()` catches exceptions, does NOT re-raise | Test continues after property failures | All properties always get evaluated; report captures everything |
 | No `try/finally` wrapper around user testScript | If bare `succeed()` fails before report, no report.json (test still fails) | Keeping it simple; `try/finally` can be added later |
 | `composedProps.check` NOT auto-appended | User places `_check()` calls explicitly | Explicit checkpoints per architecture.md |
-| Report via `copy_from_vm` | report.json lands in `$out/report.json` | More reliable than stdout parsing |
+| Report via `copy_from_machine` | report.json lands in `$out/report.json` | More reliable than stdout parsing; replaces deprecated `copy_from_vm` |
 | JSON via base64 encoding | Avoids shell escaping issues in `machine.succeed()` | JSON contains quotes, newlines, etc. |
 | mkForce only on fuzzed layers | Base config is plain, fuzzed config and topology get mkForce | Fuzzer outputs pure attrsets; priority is applied at merge time (see [merge.md](merge.md)) |
 | `reportNode` defaults to first node | Configurable for multi-node tests | Single-node tests just work; multi-node tests specify which node writes the report |

@@ -288,7 +288,7 @@ Based on NixOS `testers.runNixOSTest`. Thin wrapper that composes inputs into a 
 
 **Inputs:** `nodeConfigs`, `testScript`, `properties`, `name`, `reportNode`
 
-**Output:** `report.json` (structured test results via `copy_from_vm`), test derivation pass/fail
+**Output:** `report.json` (structured test results via `copy_from_machine`), test derivation pass/fail
 
 Properties are called at explicit checkpoints via `_check()` — not auto-appended. The `_check()` function catches all exceptions and does not re-raise, so all properties are always evaluated even after failures.
 
