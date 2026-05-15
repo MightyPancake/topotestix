@@ -15,21 +15,21 @@
 
 ## Phase 2: Orchestration (basic)
 
-- [ ] `lib/orchestrate.nix` — full pipeline function (fuzzer → expandTopology → merge → runner)
-- [ ] Update `lib/expand-topology.nix` — return `{ nodeConfigs, nodeRoles }` instead of just node attrset
-- [ ] Update expand-topology tests for new output structure
-- [ ] Rewrite `orchestrator/orchestrator.py` — CLI with `run` subcommand, single-seed execution
-- [ ] Create `targets/topology/single-machine.nix` — trivial topology for single-node tests
-- [ ] Update `targets/nginx/test-script.py` — `machine` → `machine1`
-- [ ] Update `targets/nginx/properties.nix` — `machine` → `machine1`
-- [ ] End-to-end verification with nginx smoke test via orchestrator
+- [x] `lib/orchestrate.nix` — full pipeline function (fuzzer → expandTopology → merge → runner)
+- [x] Update `lib/expand-topology.nix` — return `{ nodeConfigs, nodeRoles }` instead of just node attrset
+- [x] Update expand-topology tests for new output structure
+- [x] Rewrite `orchestrator/orchestrator.py` — CLI with `run` subcommand, single-seed execution
+- [x] Create `targets/topology/single-machine.nix` — trivial topology for single-node tests
+- [x] Update `targets/nginx/test-script.py` — `machine` → `machine1`
+- [x] Update `targets/nginx/properties.nix` — `machine` → `machine1`
+- [x] End-to-end verification with nginx smoke test via orchestrator
 
 ## Phase 3: Topology
 
 - [x] topology target spec (VLAN sets per role, node count, role counts) — exists as `targets/topology/simple-cluster.nix`
 - [x] expandTopology function (topology-map → per-node VLAN configs, deterministic, no seed) — exists as `lib/expand-topology.nix`
 - [x] expandTopology tests (unit tests for expansion logic + nodeRoles output)
-- [ ] orchestrator integration (fuzzer call for topology + expandTopology + per-role fuzzer calls) — part of Phase 2
+- [x] orchestrator integration (fuzzer call for topology + expandTopology + per-role fuzzer calls) — done in Phase 2
 
 ## Phase 4: Real SUT
 
@@ -58,6 +58,7 @@
 - [ ] runner as http service
 - [ ] selective property inclusion via `--property-name` CLI flag
 - [ ] value-based shrinking (manipulate generated config values directly, requires fuzzer per-path overrides)
+- [ ] inject other host names to /etc/hosts to posibility to pinging by hostname
 
 ## Notes
 

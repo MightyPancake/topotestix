@@ -8,7 +8,7 @@
           machine.succeed("curl -s -o /dev/null -w '%{http_code}' http://localhost:" + str(port) + " | grep 200")
     '';
     check = ''
-      _check("nginx-responds-to-http", check_nginx_responds, machine)
+      _check("nginx-responds-to-http", check_nginx_responds, machine1)
     '';
   };
 }

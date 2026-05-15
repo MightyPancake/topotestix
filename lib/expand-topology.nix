@@ -31,9 +31,16 @@
 #     };
 #   }
 #   # => {
-#   #   broker1     = { virtualisation.vlans = [ 1 ]; };
-#   #   broker2     = { virtualisation.vlans = [ 1 ]; };
-#   #   controller1 = { virtualisation.vlans = [ 2 ]; };
+#   #   nodeConfigs = {
+#   #     broker1     = { virtualisation.vlans = [ 1 ]; };
+#   #     broker2     = { virtualisation.vlans = [ 1 ]; };
+#   #     controller1 = { virtualisation.vlans = [ 2 ]; };
+#   #   };
+#   #   nodeRoles = {
+#   #     broker1     = "broker";
+#   #     broker2     = "broker";
+#   #     controller1 = "controller";
+#   #   };
 #   # }
 #   # Brokers on VLAN 1, controller on VLAN 2 — they cannot reach each other.
 #
@@ -47,9 +54,16 @@
 #     };
 #   }
 #   # => {
-#   #   broker1     = { virtualisation.vlans = [ 1 10 ]; };
-#   #   broker2     = { virtualisation.vlans = [ 1 10 ]; };
-#   #   controller1 = { virtualisation.vlans = [ 2 10 ]; };
+#   #   nodeConfigs = {
+#   #     broker1     = { virtualisation.vlans = [ 1 10 ]; };
+#   #     broker2     = { virtualisation.vlans = [ 1 10 ]; };
+#   #     controller1 = { virtualisation.vlans = [ 2 10 ]; };
+#   #   };
+#   #   nodeRoles = {
+#   #     broker1     = "broker";
+#   #     broker2     = "broker";
+#   #     controller1 = "controller";
+#   #   };
 #   # }
 #   # Brokers on VLAN 1 + shared VLAN 10, controller on VLAN 2 + shared VLAN 10.
 #   # VLAN 10 allows cross-role communication while VLANs 1 and 2 isolate role traffic.
@@ -67,8 +81,14 @@
 #     };
 #   }
 #   # => {
-#   #   broker1     = { virtualisation.vlans = [ 1 ]; };
-#   #   controller1 = { virtualisation.vlans = [ 2 10 ]; };
+#   #   nodeConfigs = {
+#   #     broker1     = { virtualisation.vlans = [ 1 ]; };
+#   #     controller1 = { virtualisation.vlans = [ 2 10 ]; };
+#   #   };
+#   #   nodeRoles = {
+#   #     broker1     = "broker";
+#   #     controller1 = "controller";
+#   #   };
 #   # }
 #   # broker1 is on VLAN 1 only, controller1 is on VLANs 2 and 10.
 #   # They cannot communicate — this simulates a partition.
@@ -81,7 +101,10 @@
 #       brokerVlans = [ 1 ];
 #     };
 #   }
-#   # => { broker1 = { virtualisation.vlans = [ 1 ]; }; }
+#   # => {
+#   #   nodeConfigs = { broker1 = { virtualisation.vlans = [ 1 ]; }; };
+#   #   nodeRoles = { broker1 = "broker"; };
+#   # }
 #
 # How this fits in the pipeline:
 #
@@ -90,7 +113,8 @@
 #                      brokerVlans = [ 1 ]; controllerVlans = [ 2 ]; }
 #
 #   2. expandTopology: takes the fuzzer output and expands it into per-node configs
-#                  → { broker1.vlans = [1]; broker2.vlans = [1]; controller1.vlans = [2]; }
+#                  → { nodeConfigs = { broker1.vlans = [1]; broker2.vlans = [1]; controller1.vlans = [2]; };
+#                      nodeRoles = { broker1 = "broker"; broker2 = "broker"; controller1 = "controller"; }; }
 #
 #   3. Orchestrator: merges per-node topology configs with base + fuzzer configs
 #                  → final node configs ready for NixOS test runner
@@ -105,6 +129,15 @@
 # config seeds — the orchestrator can assign different VLAN sets to individual
 # nodes after expansion by overriding their configs in the three-layer merge.
 #
+# Output structure:
+#
+#   expandTopology returns { nodeConfigs, nodeRoles } where:
+#   - nodeConfigs: attrset mapping node names to their VLAN configs
+#   - nodeRoles: attrset mapping node names to their role names
+#
+#   The nodeRoles mapping is needed by orchestrate.nix to look up which role
+#   config applies to each node during the three-layer merge.
+#
 { lib }:
 
 {
@@ -113,10 +146,13 @@
       # All role names from the topology-map (e.g. ["broker", "controller"])
       roleNames = builtins.attrNames topology-map.roles;
 
-      # expandRole : string -> attrset
+      # expandRole : string -> { configs : attrset, roles : attrset }
       #
-      # For a given role name, generate N node attribute sets where N is the
+      # For a given role name, generate N node entries where N is the
       # count specified in topology-map.roles.
+      #
+      # Returns both the node configs (for VLAN assignment) and the
+      # node-to-role mapping (for orchestrator per-role config lookup).
       #
       # Step by step, for expandRole "broker" with:
       #   topology-map.roles.broker    = 2
@@ -127,8 +163,9 @@
       #   3. vlans = [ 1 10 ]                         — look up VLANs in topology-map
       #   4. mkNode 0 => { name = "broker1"; value = { virtualisation.vlans = [ 1 10 ]; }; }
       #      mkNode 1 => { name = "broker2"; value = { virtualisation.vlans = [ 1 10 ]; }; }
-      #   5. listToAttrs => { broker1 = { virtualisation.vlans = [ 1 10 ]; };
-      #                        broker2 = { virtualisation.vlans = [ 1 10 ]; }; }
+      #   5. configs => { broker1 = { virtualisation.vlans = [ 1 10 ]; };
+      #                   broker2 = { virtualisation.vlans = [ 1 10 ]; }; }
+      #      roles   => { broker1 = "broker"; broker2 = "broker"; }
       #
       # All nodes of the same role get identical VLANs — network topology is
       # a property of the role, not the individual node. Per-node variation
@@ -136,33 +173,48 @@
       #
       expandRole = roleName:
         let
-          # How many nodes of this role to create (e.g. roles.broker = 2)
           count = topology-map.roles.${roleName};
 
-          # Derive the VLAN key from role name: "broker" → "brokerVlans"
           vlanKey = "${roleName}Vlans";
 
-          # Look up VLAN assignment for this role. Defaults to [] (no connectivity).
           vlans = topology-map.${vlanKey} or [];
 
-          # mkNode : int -> { name : string, value : attrset }
-          #
-          # Generate a single node entry. idx is 0-based, so we add 1
-          # for human-readable names (broker1, not broker0).
           mkNode = idx: {
             name = "${roleName}${toString (idx + 1)}";
             value = { virtualisation.vlans = vlans; };
           };
-        in
-        builtins.listToAttrs (lib.genList mkNode count);
 
-    # foldl' merges all role expansions into a single attribute set.
-    #
-    # Starting from {}, for each role name, expand it and merge into the accumulator.
-    #   {} // expandRole "broker"   => { broker1 = ...; broker2 = ...; }
-    #   ... // expandRole "controller" => { broker1 = ...; broker2 = ...; controller1 = ...; }
-    #
-    # The // operator merges attribute sets. Node names must be unique across roles.
+          nodeNames = map (idx: "${roleName}${toString (idx + 1)}") (lib.range 0 (count - 1));
+        in
+        {
+          configs = builtins.listToAttrs (lib.genList mkNode count);
+          roles = builtins.listToAttrs (map (name: { inherit name; value = roleName; }) nodeNames);
+        };
+
+      # Merge all role expansions into a single result.
+      #
+      # Starting from { nodeConfigs = {}; nodeRoles = {}; }, for each role name,
+      # expand it and merge both configs and roles into the accumulators.
+      #
+      #   { nodeConfigs = {}; nodeRoles = {}; }
+      #     // expandRole "broker"
+      #   => { nodeConfigs = { broker1 = ...; broker2 = ...; };
+      #        nodeRoles   = { broker1 = "broker"; broker2 = "broker"; }; }
+      #     // expandRole "controller"
+      #   => { nodeConfigs = { broker1 = ...; broker2 = ...; controller1 = ...; };
+      #        nodeRoles   = { broker1 = "broker"; broker2 = "broker"; controller1 = "controller"; }; }
+      #
+      mergeExpansion = acc: roleName:
+        let
+          expansion = expandRole roleName;
+        in
+        {
+          nodeConfigs = acc.nodeConfigs // expansion.configs;
+          nodeRoles = acc.nodeRoles // expansion.roles;
+        };
+
+      initial = { nodeConfigs = {}; nodeRoles = {}; };
+
     in
-    builtins.foldl' (acc: roleName: acc // expandRole roleName) {} roleNames;
+    builtins.foldl' mergeExpansion initial roleNames;
 }

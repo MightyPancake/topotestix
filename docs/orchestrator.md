@@ -276,3 +276,25 @@ Files to create or modify:
 - TUI (Phase 5)
 - Failure-reproducing flake output
 - Runner as HTTP service
+
+## Example of use:
+
+From the project root, with nix develop (which provides python3):
+nix develop -c python3 orchestrator/orchestrator.py run \
+  --seed 5 \
+  --topology-target targets/topology/single-machine.nix \
+  --config-target targets/config/nginx.nix \
+  --base-module targets/nginx/module.nix \
+  --test-script targets/nginx/test-script.py \
+  --properties targets/nginx/properties.nix \
+  --name nginx-test
+
+To test a failing seed (nginx disabled):
+nix develop -c python3 orchestrator/orchestrator.py run \
+  --seed 1 \
+  --topology-target targets/topology/single-machine.nix \
+  --config-target targets/config/nginx.nix \
+  --base-module targets/nginx/module.nix \
+  --test-script targets/nginx/test-script.py \
+  --properties targets/nginx/properties.nix \
+  --name nginx-test-fail

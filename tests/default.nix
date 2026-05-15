@@ -20,3 +20,5 @@ in
 (import ./merge-test.nix { inherit lib; merge = merge; })
 //
 (import ./runner-test.nix { inherit lib; composeTestScript = composeTestScript; })
+//
+(import ./orchestrate-test.nix { inherit lib; fuzzer = fuzzer; expand-topology = expandTopology; merge = merge; })
