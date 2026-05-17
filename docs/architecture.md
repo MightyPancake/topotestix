@@ -214,12 +214,15 @@ Shared combinator language:
 
 #### Shrinking
 
+- **Choice-based shrinking** — reduces choice indices toward 0 (not seed-based)
 - **Target config domain:** simpler values (lower memory, fewer services enabled, fewer packages)
 - **Topology domain:** fewer nodes, simpler VLAN sets, no partitions
+- The fuzzer returns `{ result, choices }` — `choices` maps paths to indices for shrinking
+- The shrinker module (`lib/shrinker.nix`) applies index overrides to fuzzed output, producing simpler configs
+- Python orchestrator drives the iterative shrinking loop; Nix evaluates each candidate
+- **Convention:** lower index = simpler value in target spec option lists (including `bool = [false true]`)
 
-Since shrinking operates on the seed space (integers), the orchestrator can try simpler seeds directly without understanding config internals.
-
-**Key:** seed (integer) as primary identifier. Not config hash. Seed-as-key preserves reproducibility and makes shrinking straightforward.
+See [shrinking.md](shrinking.md) for full design.
 
 ---
 
@@ -315,7 +318,7 @@ This ensures reproducibility from a single seed and makes shrinking straightforw
 6. Three-layer merge: `base ⊕ per-node config ⊕ per-node topology config`
 7. Call runner with composed final node configs
 8. Parse report.json / stdout from runner
-9. On failure: shrink master_seed and iterate
+9. On failure: shrink choice indices and iterate (see [shrinking.md](shrinking.md))
 10. Output summary of all runs and minimal failing cases
 
 **Shrinking loop (conceptual):**
@@ -324,14 +327,15 @@ This ensures reproducibility from a single seed and makes shrinking straightforw
 for seed in seeds:
     result = run(seed)
     if result.failed:
-        for simpler_seed in shrink(seed):
-            result = run(simpler_seed)
-            if result.failed:
-                minimal = simpler_seed
-                break
+        for choice_path in shrinkable_paths:
+            for simpler_index in range(current_index - 1, -1, -1):
+                result = run_with_override(seed, choice_path, simpler_index)
+                if result.failed:
+                    keep override (simpler value still triggers bug)
+                    break
 ```
 
-Since all seeds are derived from `master_seed`, shrinking one seed number shrinks the entire configuration space (topology + all node configs) simultaneously.
+Each choice is shrunk independently: topology choices first, then per-role config choices. The shrinker operates on choice indices, not seeds — see [shrinking.md](shrinking.md).
 
 **Future (not priority):** parallel seed execution — run multiple seeds concurrently, then shrink only the failing ones.
 
@@ -345,7 +349,7 @@ Since all seeds are derived from `master_seed`, shrinking one seed number shrink
 4. **Three-layer config composition** — base config ⊕ fuzzed target configs ⊕ fuzzed topology configs = final node config, merged via `lib.recursiveUpdate`
 5. **Topology outputs per-node attribute sets** — VLANs, roles are NixOS options merged like any other config layer
 6. **VLAN membership is per-node lists** — enables mixed topologies (shared + isolated VLANs), partitions, and network variations
-7. **Seed-as-key** — all seeds derived from master_seed. Reproducibility from one number. Shrinking is trying simpler master seeds.
+7. **Seed-as-key** — all seeds derived from master_seed. Reproducibility from one number. Shrinking operates on choice indices, not seeds (see [shrinking.md](shrinking.md)).
 8. **Properties are Python helpers defined in Nix** — reusable across SUTs, injected into testScript by runner, called at explicit checkpoints
 9. **Fuzzer outputs only fuzzed options** — base config is added by orchestrator, keeping the fuzzer's responsibility minimal
 10. **Every module usable from CLI** — fuzzer, expandTopology, runner, and orchestrator each have a CLI interface

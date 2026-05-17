@@ -217,40 +217,35 @@ orchestrate {
 
 Python resolves all paths to absolute, generates this file to a temp location, and runs `nix build --impure --file tempfile.nix -o result-link`.
 
-## Shrinking (Future — Phase 6)
+## Shrinking (Phase 4)
 
-Phase 2 implements single-pass execution. Shrinking comes later with a two-pass approach:
+Phase 4 adds **choice-based shrinking** — reducing individual choice indices toward 0 to find the minimal config that still triggers a failure. See [shrinking.md](shrinking.md) for full design.
 
-**Pass 1**: `nix eval --json` to evaluate topology and learn role names and structure.
+**Shrinker module:** `lib/shrinker.nix` — pure Nix function that applies choice overrides to fuzzed output. Identity when no overrides are provided.
 
-**Pass 2**: Build the full test with specific seeds per dimension.
+**Fuzzer changes:** returns `{ result, choices }` instead of just a flat attrset. `choices` maps path strings (e.g. `".memorySize"`) to the index the fuzzer selected.
+
+**Orchestrator `--shrink` mode:** Python drives the iterative shrinking loop:
+
+```
+1. nix eval: fuzzer(seed, target) → { result, choices }
+2. nix eval: shrinker.choicePaths(target) → list of shrinkable paths
+3. For each dimension (topology, then each role):
+     For each path in dimension:
+       For index from current_index-1 down to 0:
+         nix eval: shrinker.apply(target, fuzzed, {path: index})
+         nix build: orchestrate with updated overrides
+         If test fails → keep override, update accumulated choices
+         If test passes → discard override, try next index
+4. Output: minimal overrides map per dimension
+```
 
 Two shrinking approaches, by priority:
 
-| Approach | Method | Phase | Trade-off |
+| Approach | Method | Status | Trade-off |
 |---|---|---|---|
-| **A: Move the seed** | Try smaller seed numbers per dimension | Phase 6 | Fast, reproducible. Finds "smallest seed that still fails," not necessarily simplest config |
-| **B: Move the values** | Manipulate generated config values directly (requires fuzzer per-path overrides) | Future | Finds truly minimal config. Requires enhancing fuzzer to accept overrides |
-  
-Per-dimension shrinking: manipulate each seed independently (topology, per-role config). Result is "smallest seed per dimension that still triggers the failure."
-
-```
-Shrinking process (Phase 6):
-
-for master_seed in seeds:
-    result = run(master_seed)
-    if result.failed:
-        # Shrink topology dimension
-        for topo_seed in range(1, master_seed):
-            result = run_with_seeds(topology_seed=topo_seed, role_seeds=original_role_seeds)
-            if result.failed:
-                minimal_topology_seed = topo_seed
-                break
-        # Shrink each role dimension
-        for role in roles:
-            for role_seed in range(1, original_role_seed):
-                ...
-```
+| **A: Choice-based shrinking** | Reduce choice indices toward 0, using target spec ordering | Phase 4 | Finds truly simpler configs. Target spec convention: lower index = simpler |
+| **B: Target-aware shrinking** | Use NixOS default values as baseline; weight shrinking toward error-prone configs | Future | More semantically meaningful. Requires querying NixOS module system |
 
 ## Phase 2 Implementation Scope
 
@@ -270,10 +265,10 @@ Files to create or modify:
 ## Future Additions (Not Phase 2)
 
 - Selective property inclusion via `--property-name` CLI flag
-- Shrinking (Phase 6) — per-dimension seed manipulation, two-pass approach
-- Value-based shrinking — manipulate generated values directly
+- Choice-based shrinking (Phase 4) — see [shrinking.md](shrinking.md)
+- Value-aware shrinking — use NixOS defaults as baseline, weight toward error-prone configs
 - Multi-seed execution / parallel builds (Phase 7)
-- TUI (Phase 5)
+- TUI (Phase 6)
 - Failure-reproducing flake output
 - Runner as HTTP service
 

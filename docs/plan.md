@@ -33,12 +33,13 @@
 
 ## Phase 4: Shrinking
 
-- [ ] Config simplicity heuristic: fewer nodes, less memory, fewer VLANs, fewer enabled services
-- [ ] Two-pass shrinking approach: (1) `nix eval` topology to learn structure, (2) build full test with specific seeds
-- [ ] Per-dimension seed enumeration: try smaller seeds per dimension (topology, per-role config) independently
-- [ ] Orchestrator `--shrink` mode: takes a failing seed, outputs minimal seed map per dimension
-- [ ] Orchestrator prints shrunk seed map for reproduction
-- [ ] Future: value-based shrinking — manipulate generated config values directly, requires fuzzer per-path overrides
+- [ ] Update `lib/combinators.nix` — change `bool` from `[true false]` to `[false true]` (false is simpler, lower index = simpler)
+- [ ] Update fuzzer to return `{ result, choices }` — choices maps path strings to indices
+- [ ] Create `lib/shrinker.nix` — pure Nix shrinking module (see [shrinking.md](shrinking.md))
+- [ ] Create shrinker tests (`tests/shrinker-test.nix`)
+- [ ] Update `lib/orchestrate.nix` — add `topologyChoices` and `configChoices` parameters, pass through shrinker
+- [ ] Update `orchestrator/orchestrator.py` — add `--shrink <master_seed>` mode, shrinking loop
+- [ ] End-to-end shrinking verification with nginx SUT
 
 ## Phase 5: Real SUT
 
@@ -60,12 +61,15 @@
 - [ ] fuzzing regular nixos configurations (auto-resolving option variants from NixOS documentation so users only need to point at a configuration and specify which options to fuzz)
 - [ ] runner as http service
 - [ ] selective property inclusion via `--property-name` CLI flag
-- [ ] value-based shrinking (manipulate generated config values directly, requires fuzzer per-path overrides)
+- [ ] choice-based shrinking (manipulate generated config values via index-based overrides, see [shrinking.md](shrinking.md))
 - [ ] inject other host names to /etc/hosts to posibility to pinging by hostname
+- [ ] NixOS default values as minimal baseline (requires querying NixOS module system)
+- [ ] weighted shrinking toward error-prone configs (less memory → more OOM, fewer nodes → quorum loss)
+- [ ] shrinking choices separete for each role
 
 ## Notes
 
-- Fuzzer is pure: `seed + target → flat attrset`. No cluster logic, no node naming.
+- Fuzzer is pure: `seed + target → { result, choices }`. No cluster logic, no node naming. `result` is the flat attrset; `choices` maps path strings to indices.
 - expandTopology is a separate pure function: `topology-map → per-node VLAN configs`. No seed, no randomness.
 - Merge module is in `lib/merge.nix`, separate from runner — same pattern as `expand-topology.nix` being separate from fuzzer. Merge is an orchestration concern, not a runner concern.
 - Orchestrator derives all seeds from master_seed: `master_seed + 0` for topology, `master_seed + 1 + roleIndex` for per-role config (alphabetical role order). All nodes of the same role share one fuzzer call.
@@ -85,7 +89,8 @@
 - `composedProps.check` NOT auto-appended — user places `_check()` calls explicitly (explicit checkpoints)
 - Simple SUT (nginx) validates the pipeline end-to-end before bringing in Kafka's long build times
 - Smoke test is manual: run a single seed through fuzzer → merge → runner, verify report.json output
-- Phase 2 shrinking: not in scope. Phase 4 will add per-dimension seed shrinking with a config-simplicity heuristic (fewer nodes < more nodes, less memory < more memory, fewer VLANs < fewer VLANs). Future: value-based shrinking.
+- Phase 2 shrinking: not in scope. Phase 4 adds choice-based shrinking — the shrinker module reduces option indices toward 0 (lower index = simpler value). See [shrinking.md](shrinking.md).
+- Shrinking approach: choice-based (not seed-based). The fuzzer returns `{ result, choices }` where choices maps paths to indices. The shrinker replaces specific indices with lower ones. Python orchestrator drives the iterative shrinking loop. See [shrinking.md](shrinking.md).
 - Phase 2 always requires `--topology-target` — no single-node mode. Single-node tests use a trivial topology like `single-machine.nix`.
 - Orchestrator starts as single orchestrator.py with argparse; later packaged as Nix-managed Python package (pyproject.toml)
 - Nix testing via nix-unit (test attributes prefixed with `test`, expr/expected format)
