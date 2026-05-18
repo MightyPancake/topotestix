@@ -2,10 +2,13 @@
 #
 # Deterministic, seed-based configuration generator.
 #
-# The fuzzer takes a seed and a target attribute set, and produces a flat
-# attribute set where every list has been resolved to a single deterministic
-# value. The seed ensures that different seeds produce different configurations,
-# while the same seed always produces the same configuration.
+# The fuzzer takes a seed and a target attribute set, and produces a resolved
+# attribute set where every list has been replaced with a single deterministic
+# value, along with a choices map recording which index was selected for each path.
+#
+# The choices map enables choice-based shrinking: each path maps to the index
+# that the fuzzer selected. The shrinker can override specific indices to produce
+# simpler configurations.
 #
 # How it works:
 #   1. The seed is used as a prefix for the attribute path hash
@@ -24,10 +27,13 @@
 #     seed = "42";
 #     target = {
 #       virtualisation.memorySize = [ 512 1024 2048 4096 ];
-#       services.openssh.enable = [ true false ];
+#       services.openssh.enable = bool;
 #     };
 #   }
-#   # => { virtualisation.memorySize = 2048; services.openssh.enable = false; }
+#   # => {
+#   #   result = { virtualisation.memorySize = 2048; services.openssh.enable = false; };
+#   #   choices = { ".virtualisation.memorySize" = 2; ".services.openssh.enable" = 0; };
+#   # }
 #
 # Example — same target, different seed produces different results:
 #
@@ -35,10 +41,10 @@
 #     seed = "99";
 #     target = {
 #       virtualisation.memorySize = [ 512 1024 2048 4096 ];
-#       services.openssh.enable = [ true false ];
+#       services.openssh.enable = bool;
 #     };
 #   }
-#   # => { virtualisation.memorySize = 512; services.openssh.enable = true; }
+#   # => { result = { ... }; choices = { ... }; }
 #   # (different seed → different choices)
 #
 # Example — topology target (same mechanism, different domain):
@@ -51,42 +57,19 @@
 #       controllerVlans = [ [ 2 ] [ 2 10 ] ];
 #     };
 #   }
-#   # => { nodeCount = 3; brokerVlans = [ 1 ]; controllerVlans = [ 2 ]; }
+#   # => {
+#   #   result = { nodeCount = 3; brokerVlans = [ 1 ]; controllerVlans = [ 2 ]; };
+#   #   choices = { ".nodeCount" = 1; ".brokerVlans" = 0; ".controllerVlans" = 0; };
+#   # }
 #   # (the fuzzer doesn't know or care that this is topology — it's just lists)
+#
+# The choices map is used by the shrinker to override specific indices during
+# shrinking. See docs/shrinking.md for details.
 #
 # The orchestrator calls the fuzzer multiple times with different derived seeds:
 #   - master_seed + 0  →  topology target (node count, roles, VLANs)
-#   - master_seed + 1  →  broker1 config target
-#   - master_seed + 2  →  broker2 config target
-#   - ...etc
+#   - master_seed + 1 + roleIndex  →  per-role config (alphabetical role order)
 #
-# Example see for yourself:
-#
-# nix eval --impure --json --expr  '''
-# let pkgs = import <nixpkgs> {};
-# lib = pkgs.lib;
-# fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-# in {
-# seed1 = fuzzer { seed = "1"; target = { x = [1 2 3]; y = [true false]; }; };
-# seed2 = fuzzer { seed = "2"; target = { x = [1 2 3]; y = [true false]; }; };
-# same = fuzzer { seed = "1"; target = { x = [1 2 3]; y = [true false]; }; };
-# }
-# ''' 2>&1
-# # =>
-# {
-#   "same": {
-#     "x": 3,
-#     "y": true
-#   },
-#   "seed1": {
-#     "x": 3,
-#     "y": true
-#   },
-#   "seed2": {
-#     "x": 2,
-#     "y": true
-#   }
-# }
 { lib }:
 
 let
@@ -94,5 +77,11 @@ let
 in
 {
   fuzzer = { seed, target }:
-    combinators.resolve seed target;
+    let
+      resolved = combinators.resolve seed target;
+    in
+    {
+      result = resolved.value;
+      choices = resolved.choices;
+    };
 }

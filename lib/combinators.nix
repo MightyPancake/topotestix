@@ -93,23 +93,31 @@ let
     in
     builtins.elemAt options idx;
 
-  # resolve : string -> value -> value
+# resolve : string -> value -> { value, choices }
   #
   # Walk an attribute set and replace every list with a deterministic choice.
-  # Lists are replaced using `choose` with the current attribute path as the key.
-  # Attribute sets are recursed into. Functions are called with { lib; } and
-  # the result is resolved. All other values pass through unchanged.
+  # Also tracks which index was chosen for each path, returning both the
+  # resolved value and a choices map.
   #
-  # The `prefix` argument tracks the current dot-separated path (e.g. "virtualisation.memorySize")
+  # Returns { value = <resolved attrset>; choices = { ".path" = index; ... }; }
+  #
+  # The `prefix` argument tracks the current dot-separated path (e.g. ".virtualisation.memorySize")
   # so that each list gets a unique, deterministic key independent of other lists.
+  #
+  # Important: use an empty string "" as the initial prefix when calling resolve
+  # on a top-level target. The function appends dot-separated keys internally,
+  # so the paths in choices will be like ".virtualisation.memorySize".
   #
   # Example — simple flat target:
   #
   #   resolve "" {
   #     virtualisation.memorySize = [ 512 1024 2048 4096 ];
-  #     services.openssh.enable = [ true false ];
+  #     services.openssh.enable = bool;
   #   }
-  #   # => { virtualisation.memorySize = 2048; services.openssh.enable = false; }
+  #   # => {
+  #   #   value = { virtualisation.memorySize = 2048; services.openssh.enable = false; };
+  #   #   choices = { ".virtualisation.memorySize" = 2; ".services.openssh.enable" = 0; };
+  #   # }
   #
   # Example — nested target:
   #
@@ -119,36 +127,29 @@ let
   #       diskSize = [ 1024 2048 5120 ];
   #     };
   #   }
-  #   # => { virtualisation = { memorySize = 1024; diskSize = 2048; }; }
-  #
-  # Example — function values (useful for referencing pkgs):
-  #
-  #   resolve "" {
-  #     environment.systemPackages = { lib }: [ [ pkgs.vim pkgs.emacs ] ];
-  #     # The function receives { lib; } and its return value is resolved.
-  #     # This allows targets to depend on pkgs or other context.
-  #   }
-  #
-  # Example — scalar values pass through unchanged:
-  #
-  #   resolve "" {
-  #     boot.loader.grub.enable = true;            # passes through as true
-  #     virtualisation.memorySize = [ 512 1024 ];  # resolved to one value
-  #   }
-  #   # => { boot.loader.grub.enable = true; virtualisation.memorySize = 1024; }
-  #
-  # Important: use an empty string "" as the initial prefix when calling resolve
-  # on a top-level target. The function appends dot-separated keys internally.
+  #   # => {
+  #   #   value = { virtualisation = { memorySize = 1024; diskSize = 2048; }; };
+  #   #   choices = { ".virtualisation.memorySize" = 1; ".virtualisation.diskSize" = 1; };
+  #   # }
   #
   resolve = prefix: value:
     if builtins.isList value then
-      choose prefix value
+      let
+        idx = lib.mod (toInt prefix) (builtins.length value);
+      in
+      { value = builtins.elemAt value idx; choices = { "${prefix}" = idx; }; }
     else if builtins.isAttrs value then
-      lib.mapAttrs (n: v: resolve (prefix + "." + n) v) value
+      let
+        result = lib.mapAttrs (n: v: resolve (prefix + "." + n) v) value;
+      in
+      {
+        value = lib.mapAttrs (n: v: v.value) result;
+        choices = lib.foldl' (acc: v: acc // v.choices) {} (lib.attrValues result);
+      }
     else if builtins.isFunction value then
       resolve prefix (value { inherit lib; })
     else
-      value;
+      { value = value; choices = {}; };
 
 in
 {
@@ -156,13 +157,17 @@ in
 
   # bool : [bool]
   #
-  # Convenience combinator for boolean options. Equivalent to [ true false ].
+  # Convenience combinator for boolean options. Equivalent to [ false true ].
+  #
+  # Ordered so that index 0 = false (simpler). This convention supports
+  # choice-based shrinking: lower index = simpler value. A disabled service
+  # is simpler than an enabled one.
   #
   # Example:
   #   resolve "" { services.openssh.enable = bool; }
-  #   # => { services.openssh.enable = true; } or { services.openssh.enable = false; }
+  #   # => { services.openssh.enable = false; } or { services.openssh.enable = true; }
   #
-  bool = [ true false ];
+  bool = [ false true ];
 
   # range : int -> int -> int -> [int]
   #

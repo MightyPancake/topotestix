@@ -96,7 +96,7 @@ in
     expected = "machine";
   };
 
-  testDifferentSeedsProduceDifferentRoleConfigs = {
+testDifferentSeedsProduceDifferentRoleConfigs = {
     expr =
       roleConfigs.broker != roleConfigs.controller;
     expected = true;
@@ -104,10 +104,10 @@ in
 
   testSameSeedProducesSameConfig = {
     expr =
-      (fuzzer { seed = "11"; target = configTarget; })
+      (fuzzer { seed = "11"; target = configTarget; }).result
       ==
-      (fuzzer { seed = "11"; target = configTarget; });
+      (fuzzer { seed = "11"; target = configTarget; }).result;
     expected = true;
   };
 
-  }
+}

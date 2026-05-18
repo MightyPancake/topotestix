@@ -33,12 +33,13 @@
 
 ## Phase 4: Shrinking
 
-- [ ] Update `lib/combinators.nix` — change `bool` from `[true false]` to `[false true]` (false is simpler, lower index = simpler)
-- [ ] Update fuzzer to return `{ result, choices }` — choices maps path strings to indices
-- [ ] Create `lib/shrinker.nix` — pure Nix shrinking module (see [shrinking.md](shrinking.md))
-- [ ] Create shrinker tests (`tests/shrinker-test.nix`)
-- [ ] Update `lib/orchestrate.nix` — add `topologyChoices` and `configChoices` parameters, pass through shrinker
-- [ ] Update `orchestrator/orchestrator.py` — add `--shrink <master_seed>` mode, shrinking loop
+- [x] Update `lib/combinators.nix` — change `bool` from `[true false]` to `[false true]` (false is simpler, lower index = simpler)
+- [x] Update `lib/combinators.nix` — `resolve` now returns `{ value, choices }` instead of just the resolved value
+- [x] Update fuzzer to return `{ result, choices }` — choices maps path strings to indices
+- [x] Create `lib/shrinker.nix` — pure Nix shrinking module (see [shrinking.md](shrinking.md))
+- [x] Create shrinker tests (`tests/shrinker-test.nix`)
+- [x] Update `lib/orchestrate.nix` — add `topologyChoices` and `configChoices` parameters, pass through shrinker
+- [x] Update `orchestrator/orchestrator.py` — add `--shrink <master_seed>` mode, shrinking loop, `--topology-choices`/`--config-choices` for `run`
 - [ ] End-to-end shrinking verification with nginx SUT
 
 ## Phase 5: Real SUT

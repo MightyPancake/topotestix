@@ -1,6 +1,6 @@
 # Fuzzer test suite
 #
-# Tests the fuzzer: seed + target → flat attrset.
+# Tests the fuzzer: seed + target → { result, choices }.
 # All expected values are concrete — verified by evaluation.
 #
 { lib, fuzzer, ... }:
@@ -9,26 +9,29 @@
   # Same seed + same target always produces the same result
 
   testFuzzerDeterministic = {
-    expr = fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; };
+    expr = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; }).result;
     expected = { x = 3; };
   };
 
-  # Same seed called twice must match
+  # Same seed called twice must match — both result and choices
 
-  testFuzzerDeterministicRepeat = {
-    expr = fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; };
-    expected = fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; };
+  testFuzzerDeterministicRepeatResult = {
+    expr = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; }).result;
+    expected = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; }).result;
+  };
+
+  testFuzzerDeterministicRepeatChoices = {
+    expr = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; }).choices;
+    expected = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; }; }).choices;
   };
 
   # Different seeds produce different results
 
   testFuzzerDifferentSeeds = {
-    # With only 3 options, two different seeds may pick the same value.
-    # Use a larger option space to reliably get different results.
     expr =
       let
-        a = fuzzer { seed = "1"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; };
-        b = fuzzer { seed = "7"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; };
+        a = (fuzzer { seed = "1"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; }).result;
+        b = (fuzzer { seed = "7"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; }).result;
       in a != b;
     expected = true;
   };
@@ -36,21 +39,54 @@
   # Nested attribute sets are resolved recursively
 
   testFuzzerNested = {
-    expr = fuzzer { seed = "1"; target = { a.b = [ true false ]; }; };
+    expr = (fuzzer { seed = "1"; target = { a.b = [ true false ]; }; }).result;
     expected = { a = { b = true; }; };
   };
 
   # Scalar values pass through unchanged
 
   testFuzzerScalarPassthrough = {
-    expr = fuzzer { seed = "1"; target = { x = 42; y = "hello"; }; };
+    expr = (fuzzer { seed = "1"; target = { x = 42; y = "hello"; }; }).result;
     expected = { x = 42; y = "hello"; };
   };
 
   # Multiple attributes are resolved independently
 
   testFuzzerMultipleAttrs = {
-    expr = fuzzer { seed = "100"; target = { x = [ 1 2 3 ]; y = [ 512 1024 2048 ]; }; };
+    expr = (fuzzer { seed = "100"; target = { x = [ 1 2 3 ]; y = [ 512 1024 2048 ]; }; }).result;
     expected = { x = 1; y = 512; };
+  };
+
+  # Choices map contains paths and indices
+
+  # Choices map contains paths (prefixed with seed) and indices
+
+  testFuzzerChoicesFlat = {
+    # Fuzzer uses seed as prefix, so paths are "{seed}.{attr}"
+    expr = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; y = [ 10 20 30 ]; }; }).choices;
+    expected = { "1.x" = 2; "1.y" = 1; };
+  };
+
+  testFuzzerChoicesNested = {
+    expr = (fuzzer { seed = "1"; target = { a.b = [ true false ]; c.d = [ 3 4 5 ]; }; }).choices;
+    expected = { "1.a.b" = 0; "1.c.d" = 2; };
+  };
+
+  # Choices with seed prefix produce different indices than without
+
+  testFuzzerChoicesDifferentSeed = {
+    expr =
+      let
+        a = (fuzzer { seed = "1"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; }).choices;
+        b = (fuzzer { seed = "7"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; }).choices;
+      in a != b;
+    expected = true;
+  };
+
+  # Scalar values produce no choices
+
+  testFuzzerChoicesNoScalars = {
+    expr = (fuzzer { seed = "1"; target = { x = 42; y = "hello"; }; }).choices;
+    expected = {};
   };
 }

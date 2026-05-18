@@ -5,6 +5,7 @@ let
   fuzzerMod = import ../lib/fuzzer.nix { inherit lib; };
   expand-topology-mod = import ../lib/expand-topology.nix { inherit lib; };
   merge = import ../lib/merge.nix { inherit lib; };
+  shrinker = import ../lib/shrinker.nix { inherit lib; };
   runnerMod = import ../lib/runner.nix { pkgs = null; inherit lib; testers = null; };
 
   fuzzer = fuzzerMod.fuzzer;
@@ -22,3 +23,5 @@ in
 (import ./runner-test.nix { inherit lib; composeTestScript = composeTestScript; })
 //
 (import ./orchestrate-test.nix { inherit lib; fuzzer = fuzzer; expand-topology = expandTopology; merge = merge; })
+//
+(import ./shrinker-test.nix { inherit lib; fuzzer = fuzzer; shrinker = shrinker; })

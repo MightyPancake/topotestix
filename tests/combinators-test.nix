@@ -55,7 +55,8 @@
   # Uses the attribute path as the key for choose.
 
   testResolveFlatList = {
-    expr = combinators.resolve "" { x = [ 1 2 3 ]; };
+    # resolve now returns { value, choices }
+    expr = (combinators.resolve "" { x = [ 1 2 3 ]; }).value;
     expected = { x = 3; };
 
     # Compositional test: resolve should produce the same result as
@@ -63,54 +64,75 @@
     # This verifies that resolve correctly builds the path ".x"
     # from the key "x" and delegates to choose.
     #
-    #   resolve "" { x = [1 2 3]; }
+    #   (resolve "" { x = [1 2 3]; }).value
     #   == { x = choose ".x" [1 2 3]; }
     #   == { x = 3; }
   };
 
+  testResolveFlatListChoices = {
+    # resolve tracks which index was chosen for each path
+    expr = (combinators.resolve "" { x = [ 1 2 3 ]; }).choices;
+    expected = { ".x" = 2; };
+  };
+
   testResolveMultipleLists = {
-    expr = combinators.resolve "" { x = [ 1 2 3 ]; y = [ true false ]; };
+    expr = (combinators.resolve "" { x = [ 1 2 3 ]; y = [ true false ]; }).value;
     expected = { x = 3; y = true; };
+  };
+
+  testResolveMultipleListsChoices = {
+    # bool is [false true], so index 0 = false, index 1 = true
+    # With seed "", .y hashes to some index. Let's just verify choices exist.
+    expr =
+      let
+        result = combinators.resolve "" { x = [ 1 2 3 ]; y = [ true false ]; };
+      in
+      builtins.attrNames result.choices == [ ".x" ".y" ];
+    expected = true;
   };
 
   testResolveNested = {
     # { a.b = [1 2]; } resolves the list at path ".a.b"
     # and preserves the nested structure
-    expr = combinators.resolve "" { a.b = [ 1 2 ]; };
+    expr = (combinators.resolve "" { a.b = [ 1 2 ]; }).value;
     expected = { a = { b = 2; }; };
 
-    # Compositional: resolve "" { a.b = [1 2]; }
+    # Compositional: (resolve "" { a.b = [1 2]; }).value
     #   == { a = choose ".a.b" [1 2]; }
-    #   == { a = 2; }
-    # But nested attrs are preserved, so actually:
-    #   == { a = { b = 2; }; }
+    #   == { a = { b = 2; } }
+  };
+
+  testResolveNestedChoices = {
+    expr = (combinators.resolve "" { a.b = [ 1 2 ]; c.d = [ 3 4 5 ]; }).choices;
+    expected = { ".a.b" = 1; ".c.d" = 0; };
   };
 
   testResolveScalarPassthrough = {
-    # Non-list values pass through unchanged
-    expr = combinators.resolve "" { x = 42; y = true; z = "hello"; };
+    # Non-list values pass through unchanged, no choices for scalars
+    expr = (combinators.resolve "" { x = 42; y = true; z = "hello"; }).value;
     expected = { x = 42; y = true; z = "hello"; };
+  };
+
+  testResolveScalarNoChoices = {
+    expr = (combinators.resolve "" { x = 42; y = true; z = "hello"; }).choices;
+    expected = {};
   };
 
   testResolveWithPrefix = {
     # When a prefix is given, it's prepended to the path used for choose.
-    # Different prefixes produce different choices for the same attribute name.
-    # The fuzzer uses this: resolve seed target, where seed becomes the prefix,
-    # so that different seeds produce different results.
-    expr = combinators.resolve "seed42" { x = [ 1 2 3 ]; };
+    expr = (combinators.resolve "seed42" { x = [ 1 2 3 ]; }).value;
     expected = { x = 3; };
+  };
+
+  testResolveWithPrefixChoices = {
+    # With a seed prefix, the choice path includes the seed (no leading dot)
+    expr = (combinators.resolve "seed42" { x = [ 1 2 3 ]; }).choices;
+    expected = { "seed42.x" = 2; };
   };
 
   testResolveListOfLists = {
     # When the choices are themselves lists, resolve picks ONE entire list.
-    # It replaces the outer list with a single choice, but does NOT recurse
-    # into the chosen element. This is how you choose between alternative
-    # configurations like different sets of kernel modules.
-    #
-    #   [ ["kvm" "kvm_intel"] ["nvidia"] ["virtio" "virtio_net"] ]
-    #   → choose picks e.g. ["kvm" "kvm_intel"] as a whole
-    #   → the inner list is preserved as-is, not resolved further
-    expr = combinators.resolve "" { boot.kernelModules = [ ["kvm" "kvm_intel"] ["nvidia"] ]; };
+    expr = (combinators.resolve "" { boot.kernelModules = [ ["kvm" "kvm_intel"] ["nvidia"] ]; }).value;
     expected = { boot = { kernelModules = [ "nvidia" ]; }; };
   };
 
@@ -136,6 +158,11 @@
     expr = combinators.range 0 10 5;
     expected = [ 0 5 10 ];
   };
+
+  # testRangeStepMinus1 = {
+  #   expr = combinators.range 10 0 -1;
+  #   expected = [ 10 9 8 7 6 5 4 3 2 1 0 ];
+  # };
 
   testRangeMemoryLike = {
     # Powers of 2 can't be expressed with constant step — use oneOf for those.
