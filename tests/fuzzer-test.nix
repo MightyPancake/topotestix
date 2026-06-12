@@ -59,27 +59,26 @@
 
   # Choices map contains paths and indices
 
-  # Choices map contains paths (prefixed with seed) and indices
+  # Choices map contains target-relative paths and indices
 
   testFuzzerChoicesFlat = {
-    # Fuzzer uses seed as prefix, so paths are "{seed}.{attr}"
     expr = (fuzzer { seed = "1"; target = { x = [ 1 2 3 ]; y = [ 10 20 30 ]; }; }).choices;
-    expected = { "1.x" = 2; "1.y" = 1; };
+    expected = { ".x" = 2; ".y" = 1; };
   };
 
   testFuzzerChoicesNested = {
     expr = (fuzzer { seed = "1"; target = { a.b = [ true false ]; c.d = [ 3 4 5 ]; }; }).choices;
-    expected = { "1.a.b" = 0; "1.c.d" = 2; };
+    expected = { ".a.b" = 0; ".c.d" = 2; };
   };
 
-  # Choices with seed prefix produce different indices than without
+  # Seeds affect indices, not public choice paths
 
   testFuzzerChoicesDifferentSeed = {
     expr =
       let
         a = (fuzzer { seed = "1"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; }).choices;
         b = (fuzzer { seed = "7"; target = { x = [ 1 2 3 4 5 6 7 8 9 10 ]; }; }).choices;
-      in a != b;
+      in builtins.attrNames a == [ ".x" ] && builtins.attrNames b == [ ".x" ] && a != b;
     expected = true;
   };
 

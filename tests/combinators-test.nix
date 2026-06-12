@@ -176,9 +176,34 @@
     expected = [ 512 ];
   };
 
+  testRangeDescending = {
+    expr = combinators.range 3 1 (-1);
+    expected = [ 3 2 1 ];
+  };
+
+  testRangeRejectsZeroStep = {
+    expr = (builtins.tryEval (builtins.deepSeq (combinators.range 0 10 0) true)).success;
+    expected = false;
+  };
+
+  testRangeRejectsInvalidDirection = {
+    expr = (builtins.tryEval (builtins.deepSeq (combinators.range 10 0 1) true)).success;
+    expected = false;
+  };
+
   testOneOf = {
     expr = builtins.length (combinators.oneOf [ "a" "b" "c" ]);
     expected = 3;
+  };
+
+  testOneOfRejectsEmptyList = {
+    expr = (builtins.tryEval (builtins.deepSeq (combinators.oneOf []) true)).success;
+    expected = false;
+  };
+
+  testResolveRejectsEmptyList = {
+    expr = (builtins.tryEval (builtins.deepSeq (combinators.resolve "" { x = []; }) true)).success;
+    expected = false;
   };
 
   # hash and toInt — deterministic primitives

@@ -11,9 +11,9 @@
 # simpler configurations.
 #
 # How it works:
-#   1. The seed is used as a prefix for the attribute path hash
+#   1. The seed is used as a prefix for the internal attribute path hash
 #   2. The combinators.resolve function walks the target, replacing every list
-#      with a deterministic choice based on the full path (including seed prefix)
+#      with a deterministic choice based on the full path plus the seed prefix
 #   3. Different seeds → different prefix → different hash → different choices
 #   4. Same seed + same target → same result (reproducible)
 #
@@ -78,7 +78,7 @@ in
 {
   fuzzer = { seed, target }:
     let
-      resolved = combinators.resolve seed target;
+      resolved = combinators.resolveWithKeyPrefix seed "" target;
     in
     {
       result = resolved.value;

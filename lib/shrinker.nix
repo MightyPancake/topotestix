@@ -30,13 +30,23 @@ let
   # For example, ".virtualisation.memorySize" navigates to
   # attrset.virtualisation.memorySize.
   #
+  normalizePath = path:
+    if !(builtins.isString path) || path == "" || builtins.substring 0 1 path != "." then
+      builtins.throw "shrinker: invalid path '${toString path}', expected a target-relative path like .virtualisation.memorySize"
+    else
+      builtins.substring 1 (builtins.stringLength path - 1) path;
+
   getValueByPath = attrs: path:
     let
-      # Remove leading dot, then split on dots
-      pathStr = if builtins.substring 0 1 path == "." then builtins.substring 1 (builtins.stringLength path - 1) path else path;
+      pathStr = normalizePath path;
       parts = lib.splitString "." pathStr;
     in
-    lib.foldl' (acc: part: acc.${part}) attrs parts;
+    lib.foldl' (acc: part:
+      if builtins.isAttrs acc && acc ? ${part} then
+        acc.${part}
+      else
+        builtins.throw "shrinker: path ${path} does not exist in target"
+    ) attrs parts;
 
   # setValueByPath : attrset -> string -> value -> attrset
   #
@@ -45,7 +55,7 @@ let
   #
   setValueByPath = attrs: path: value:
     let
-      pathStr = if builtins.substring 0 1 path == "." then builtins.substring 1 (builtins.stringLength path - 1) path else path;
+      pathStr = normalizePath path;
       parts = lib.splitString "." pathStr;
     in
     if builtins.length parts == 1 then
@@ -55,7 +65,7 @@ let
         head = builtins.head parts;
         tail = builtins.tail parts;
         existing = if attrs ? ${head} then attrs.${head} else {};
-        pathForTail = builtins.concatStringsSep "." tail;
+        pathForTail = "." + builtins.concatStringsSep "." tail;
       in
       attrs // { ${head} = setValueByPath existing pathForTail value; };
 
@@ -75,8 +85,7 @@ let
       lib.foldl' (acc: path:
         let
           idx = choices_override.${path};
-          options = getValueByPath target path;
-          value = builtins.elemAt options idx;
+          value = valueAtChecked target path idx;
         in
         setValueByPath acc path value
       ) fuzzed paths;
@@ -92,6 +101,9 @@ let
   #
   collectChoicePaths = prefix: value:
     if builtins.isList value then
+      if value == [] then
+        builtins.throw "shrinker.choicePaths: empty choice list at ${prefix}"
+      else
       [ prefix ]
     else if builtins.isAttrs value then
       lib.concatLists (lib.mapAttrsToList (n: v: collectChoicePaths "${prefix}.${n}" v) value)
@@ -99,6 +111,23 @@ let
       collectChoicePaths prefix (value { inherit lib; })
     else
       [];
+
+  valueAtChecked = target: path: index:
+    let
+      options = getValueByPath target path;
+    in
+    if !(builtins.isList options) then
+      builtins.throw "shrinker: path ${path} is not a choice list"
+    else
+      let
+        len = builtins.length options;
+      in
+      if len == 0 then
+        builtins.throw "shrinker: empty choice list at ${path}"
+      else if index < 0 || index >= len then
+        builtins.throw "shrinker: index ${toString index} out of range for ${path} (0..${toString (len - 1)})"
+      else
+        builtins.elemAt options index;
 
 in
 {
@@ -143,8 +172,7 @@ in
   #   # => 512
   #
   valueAt = target: path: index:
-    let options = getValueByPath target path;
-    in builtins.elemAt options index;
+    valueAtChecked target path index;
 
   # optionsFor : target -> path -> [value]
   #

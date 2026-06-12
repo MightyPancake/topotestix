@@ -87,13 +87,38 @@ let
   #   choose "x" [10 20 30]   # => 10 (same key, different list)
   #
   choose = name: options:
+    if options == [] then
+      builtins.throw "combinators.choose: options must not be empty"
+    else
     let
       n = toInt name;
       idx = lib.mod n (builtins.length options);
     in
     builtins.elemAt options idx;
 
-# resolve : string -> value -> { value, choices }
+  resolveWithKeyPrefix = keyPrefix: pathPrefix: value:
+    if builtins.isList value then
+      if value == [] then
+        builtins.throw "combinators.resolve: empty choice list at ${pathPrefix}"
+      else
+        let
+          idx = lib.mod (toInt (keyPrefix + pathPrefix)) (builtins.length value);
+        in
+        { value = builtins.elemAt value idx; choices = { "${pathPrefix}" = idx; }; }
+    else if builtins.isAttrs value then
+      let
+        result = lib.mapAttrs (n: v: resolveWithKeyPrefix keyPrefix (pathPrefix + "." + n) v) value;
+      in
+      {
+        value = lib.mapAttrs (n: v: v.value) result;
+        choices = lib.foldl' (acc: v: acc // v.choices) {} (lib.attrValues result);
+      }
+    else if builtins.isFunction value then
+      resolveWithKeyPrefix keyPrefix pathPrefix (value { inherit lib; })
+    else
+      { value = value; choices = {}; };
+
+  # resolve : string -> value -> { value, choices }
   #
   # Walk an attribute set and replace every list with a deterministic choice.
   # Also tracks which index was chosen for each path, returning both the
@@ -133,27 +158,11 @@ let
   #   # }
   #
   resolve = prefix: value:
-    if builtins.isList value then
-      let
-        idx = lib.mod (toInt prefix) (builtins.length value);
-      in
-      { value = builtins.elemAt value idx; choices = { "${prefix}" = idx; }; }
-    else if builtins.isAttrs value then
-      let
-        result = lib.mapAttrs (n: v: resolve (prefix + "." + n) v) value;
-      in
-      {
-        value = lib.mapAttrs (n: v: v.value) result;
-        choices = lib.foldl' (acc: v: acc // v.choices) {} (lib.attrValues result);
-      }
-    else if builtins.isFunction value then
-      resolve prefix (value { inherit lib; })
-    else
-      { value = value; choices = {}; };
+    resolveWithKeyPrefix "" prefix value;
 
 in
 {
-  inherit choose resolve hash toInt;
+  inherit choose resolve hash toInt resolveWithKeyPrefix;
 
   # bool : [bool]
   #
@@ -191,10 +200,17 @@ in
   #   resolve "" { virtualisation.memorySize = oneOf [ 512 1024 2048 4096 ]; }
   #
   range = min: max: step:
-    let
-      count = (max - min) / step + 1;
-    in
-    lib.genList (i: min + i * step) count;
+    if step == 0 then
+      builtins.throw "combinators.range: step must not be 0"
+    else if min < max && step < 0 then
+      builtins.throw "combinators.range: positive bounds require a positive step"
+    else if min > max && step > 0 then
+      builtins.throw "combinators.range: descending bounds require a negative step"
+    else
+      let
+        count = (max - min) / step + 1;
+      in
+      lib.genList (i: min + i * step) count;
 
   # oneOf : [a] -> [a]
   #
@@ -208,5 +224,9 @@ in
   #   resolve "" { topology = oneOf [ "star" "ring" "mesh" ]; }
   #   # => { topology = "ring"; } (one value chosen deterministically)
   #
-  oneOf = options: options;
+  oneOf = options:
+    if options == [] then
+      builtins.throw "combinators.oneOf: options must not be empty"
+    else
+      options;
 }

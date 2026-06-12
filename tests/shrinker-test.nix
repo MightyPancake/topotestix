@@ -4,7 +4,7 @@
 # The shrinker applies choice overrides to fuzzed output, enabling
 # choice-based shrinking where lower indices produce simpler values.
 
-{ lib, fuzzer, shrinker, ... }:
+{ lib, fuzzer, shrinker, expand-topology ? null, ... }:
 
 let
   configTarget = {
@@ -153,6 +153,62 @@ in
         fuzzed2 = fuzzer { seed = "42"; target = configTarget; };
       in
       fuzzed2.result // { virtualisation.memorySize = 512; };
+  };
+
+  testFuzzerChoiceKeysExistInShrinkerPaths = {
+    expr =
+      let
+        fuzzed = fuzzer { seed = "42"; target = configTarget; };
+        paths = shrinker.choicePaths configTarget;
+      in
+      builtins.all (path: builtins.elem path paths) (builtins.attrNames fuzzed.choices);
+    expected = true;
+  };
+
+  testFuzzerChoicesDirectlyUsableWithShrinker = {
+    expr =
+      let
+        fuzzed = fuzzer { seed = "42"; target = configTarget; };
+        firstChoice = builtins.head (builtins.attrNames fuzzed.choices);
+        overrides = { ${firstChoice} = fuzzed.choices.${firstChoice}; };
+      in
+      shrinker.apply configTarget fuzzed.result overrides;
+    expected = (fuzzer { seed = "42"; target = configTarget; }).result;
+  };
+
+  testTopologyPipelineFuzzerShrinkerExpand = {
+    expr =
+      let
+        fuzzed = fuzzer { seed = "42"; target = topologyTarget; };
+        shrunk = shrinker.apply topologyTarget fuzzed.result {
+          ".roles.broker" = 0;
+          ".brokerVlans" = 0;
+        };
+        expanded = expand-topology { topology-map = shrunk; };
+      in
+      {
+        nodes = builtins.attrNames expanded.nodeConfigs;
+        brokerVlans = expanded.nodeConfigs.broker1.virtualisation.vlans;
+      };
+    expected = {
+      nodes = [ "broker1" "controller1" ];
+      brokerVlans = [ 1 ];
+    };
+  };
+
+  testShrinkerRejectsInvalidPath = {
+    expr = (builtins.tryEval (builtins.deepSeq (shrinker.apply configTarget {} { ".doesNotExist" = 0; }) true)).success;
+    expected = false;
+  };
+
+  testShrinkerRejectsInvalidPathFormat = {
+    expr = (builtins.tryEval (builtins.deepSeq (shrinker.apply configTarget {} { "virtualisation.memorySize" = 0; }) true)).success;
+    expected = false;
+  };
+
+  testShrinkerRejectsOutOfRangeIndex = {
+    expr = (builtins.tryEval (builtins.deepSeq (shrinker.apply configTarget {} { ".virtualisation.memorySize" = 99; }) true)).success;
+    expected = false;
   };
 
   # Nested target: choicePaths, valueAt, optionsFor
