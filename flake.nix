@@ -38,12 +38,24 @@
             --flake ${self}#tests
           touch $out
         '';
+
+        python = pkgs.runCommand "python-tests" {
+          nativeBuildInputs = [ pkgs.python3 ];
+        } ''
+          cp -r ${self} source
+          chmod -R u+w source
+          cd source
+          python3 -m unittest discover -s tests -p 'test_*.py'
+          touch $out
+        '';
       };
 
       devShells.${system}.default = pkgs.mkShell {
         packages = with pkgs; [
           nix-unit.packages.${system}.default
           python3
+          python3Packages.black
+          ruff
         ];
 
         shellHook = ''
