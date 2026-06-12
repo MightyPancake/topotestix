@@ -23,7 +23,15 @@
       tests = import ./tests { inherit lib; };
 
       packages.${system} = {
-        default = pkgs.emptyDirectory;
+        default = pkgs.python3Packages.buildPythonApplication {
+          pname = "topotestix";
+          version = "0.1.0";
+          src = self;
+          pyproject = true;
+          build-system = [ pkgs.python3Packages.setuptools ];
+          dependencies = [ pkgs.python3Packages.textual ];
+          doCheck = false;
+        };
       };
 
       checks.${system} = {
@@ -40,7 +48,7 @@
         '';
 
         python = pkgs.runCommand "python-tests" {
-          nativeBuildInputs = [ pkgs.python3 ];
+          nativeBuildInputs = [ pkgs.python3 pkgs.python3Packages.textual ];
         } ''
           cp -r ${self} source
           chmod -R u+w source
@@ -54,6 +62,7 @@
         packages = with pkgs; [
           nix-unit.packages.${system}.default
           python3
+          python3Packages.textual
           python3Packages.black
           ruff
         ];
