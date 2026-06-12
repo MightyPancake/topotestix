@@ -346,14 +346,7 @@ runner.run {
 
 ```bash
 # Via the orchestrator (recommended):
-nix develop -c python3 orchestrator/orchestrator.py run \
-  --seed 42 \
-  --topology-target targets/topology/simple-cluster.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-test
+python3 -m topotestix.cli orchestrator run nginx --seed 42 --project-root .
 
 # Or directly via a generated Nix expression:
 nix build --impure --file generated-expression.nix -o result-nginx-test
@@ -573,34 +566,13 @@ All nodes of the same role share one fuzzer call. The seed is converted to a str
 
 ```bash
 # Normal run (no shrinking):
-nix develop -c python3 orchestrator/orchestrator.py run \
-  --seed 42 \
-  --topology-target targets/topology/simple-cluster.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-test
+python3 -m topotestix.cli orchestrator run nginx --seed 42 --project-root .
 
 # Shrinking a failing seed:
-nix develop -c python3 orchestrator/orchestrator.py shrink \
-  --seed 42 \
-  --topology-target targets/topology/simple-cluster.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-test
+python3 -m topotestix.cli orchestrator shrink nginx 42 --project-root .
 
 # Reproducing a shrunk case:
-nix develop -c python3 orchestrator/orchestrator.py run \
-  --seed 42 \
-  --topology-target targets/topology/simple-cluster.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-test \
+python3 -m topotestix.cli orchestrator run nginx --seed 42 --project-root . \
   --topology-choices '{".roles.broker": 0}' \
   --config-choices '{"broker": {".virtualisation.memorySize": 0}}'
 ```

@@ -2,18 +2,19 @@
 
 ## Module Overview
 
-Three modules, with the **orchestrator** as the central coordinator:
+Current layout: a Python `topotestix` package drives the CLI, while Nix keeps the pure execution modules.
 
 ```
  ┌──────────────────────────────────────────────────────────────┐
- │                      Orchestrator (Python CLI)               │
+  │                topotestix (Python CLI package)               │
  │                                                              │
  │  - Derives topology and per-role seeds from master_seed      │
  │  - Calls fuzzer once for topology and once per role          │
  │  - Calls expandTopology (topology-map → per-node VLANs)      │
  │  - Three-layer merge: base ⊕ config ⊕ topology               │
- │  - Calls runner, parses report.json                          │
- │  - On failure: shrink master_seed, iterate                   │
+  │  - Calls runner, parses report.json, stores run metadata     │
+  │  - On failure: shrink choice indices, iterate                │
+  │  - Exposes targets/runs/orchestrator/runner/tui commands     │
  │                                                              │
  │  Future: parallel seed execution                             │
  └────────┬────────────────────────────┬────────────────────────┘
@@ -129,20 +130,28 @@ topotestix/
 │   ├── properties.nix            # Property → Python assertion helpers
 │   └── runner.nix                # composeTestScript, run — wraps runNixOSTest with harness
 │
-├── targets/                      # Fuzz target specs (define what to fuzz)
+ ├── topotestix/                   # Python package + CLI
+ │   ├── cli.py                    # topotestix command tree
+ │   ├── orchestrator.py           # run/fuzz/shrink/sweep logic
+ │   ├── runner.py                 # runner inspection helpers
+ │   ├── run_store.py              # .topotestix/runs persistence
+ │   └── tui.py                    # minimal Textual TUI
+ │
+ ├── targets/                      # Fuzz target specs (define what to fuzz)
 │   ├── config/                   # Per-node config targets
 │   │   └── nginx.nix             # Example: NixOS option ranges for nginx
 │   ├── topology/                  # Cluster layout targets
 │   │   └── simple-cluster.nix    # Example: node count, roles, VLAN set specs
-│   └── nginx/                    # SUT definition
+ │   ├── default.nix               # Named target registry
+ │   └── nginx/                    # SUT definition
 │       ├── module.nix            # Nginx NixOS module + base config
 │       ├── properties.nix        # Nginx-specific properties
 │       └── test-script.py         # Nginx test procedure
 │
-├── orchestrator/                 # Orchestrator (Python)
-│   └── orchestrator.py           # CLI entry point, seed derivation, three-layer merge, shrinking
+ ├── orchestrator/                 # Compatibility wrapper for legacy entrypoint
+ │   └── orchestrator.py           # Thin wrapper around topotestix CLI
 │
-├── flake.nix                     # Nix entry point — composes fuzzer + merge + runner
+ ├── flake.nix                     # Nix entry point — package, checks, dev shell
 └── README.md
 ```
 
@@ -297,7 +306,7 @@ Property checks are currently auto-appended after the user test script. The `_ch
 
 ### Orchestrator
 
-Python CLI application. Central coordinator — other modules interact through it.
+Python CLI application in the `topotestix` package. Central coordinator — other modules interact through it.
 
 **Seed derivation:** The orchestrator derives all seeds from a single `master_seed`:
 - `master_seed + 0` → topology fuzzer call
@@ -315,7 +324,8 @@ This ensures reproducibility from a single seed and makes shrinking straightforw
 7. Call runner with composed final node configs
 8. Parse report.json / stdout from runner
 9. On failure: shrink choice indices and iterate (see [shrinking.md](shrinking.md))
-10. Output summary of all runs and minimal failing cases
+10. Persist run metadata, logs, and reports under `.topotestix/runs`
+11. Output summary of all runs and minimal failing cases
 
 **Shrinking loop (conceptual):**
 
@@ -348,7 +358,7 @@ Each choice is shrunk independently: topology choices first, then per-role confi
 7. **Seed-as-key** — all seeds derived from master_seed. Reproducibility from one number. Shrinking operates on choice indices, not seeds (see [shrinking.md](shrinking.md)).
 8. **Properties are Python helpers defined in Nix** — reusable across SUTs, injected into testScript by runner, and currently auto-appended after the user script
 9. **Fuzzer outputs only fuzzed options** — base config is added by orchestrator, keeping the fuzzer's responsibility minimal
-10. **Every module usable from CLI** — fuzzer, expandTopology, runner, and orchestrator each have a CLI interface
+10. **Every module usable from CLI** — fuzzer, targets, runs, runner, orchestrator, and TUI are exposed under `topotestix`
 11. **Lazy evaluation leveraged** — runner imports fuzzer via Nix, so only evaluated configs are built
 
 ---

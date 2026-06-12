@@ -7,30 +7,33 @@ Central coordinator that drives the full pipeline: fuzzer → expandTopology →
 The orchestrator has two components:
 
 1. **`lib/orchestrate.nix`** — Nix function that composes the full pipeline
-2. **`orchestrator/orchestrator.py`** — Python CLI that generates a Nix expression, calls `nix build`, parses `report.json`
+2. **`topotestix/orchestrator.py`** — Python implementation of run/fuzz/shrink/sweep helpers used by the CLI
+3. **`topotestix/cli.py`** — public `topotestix` command tree (`orchestrator`, `runner`, `runs`, `targets`, `tui`)
 
 All Nix-type computation (fuzzer, expandTopology, mkForce merge) must happen in Nix — these values can't be serialized through Python. Python is a thin CLI wrapper: generate temp `.nix` file → `nix build --impure` → parse `report.json`.
 
-`lib/orchestrate.nix` is the real pipeline logic and is testable with `nix-unit`. `orchestrator.py` handles CLI args, path resolution, temp file generation, build execution, and result parsing.
+`lib/orchestrate.nix` is the real pipeline logic and is testable with `nix-unit`. `topotestix/orchestrator.py` handles CLI args, path resolution, temp file generation, build execution, run-store writing, and result parsing.
 
 ## Data Flow (Single Pass — Phase 2)
 
 ```
-User provides:
+User provides either a target name from `targets/default.nix` or explicit path overrides, plus:
   --seed,
-  --config-target, 
-  --topology-target, 
-  --base-module, 
-  --test-script, 
-  --properties, 
-  --name
+  --config-target,
+  --topology-target,
+  --base-module,
+  --test-script,
+  --properties,
+  --name,
+  --project-root
 
-orchestrator.py:
+topotestix orchestrator:
   1. Resolve all paths to absolute
   2. Generate temp .nix file that calls orchestrate.nix
   3. nix build --impure --file tempfile.nix -o result-link
   4. Parse result-link/report.json
-  5. Print summary
+  5. Write run metadata/logs into `.topotestix/runs`
+  6. Print summary or JSON output
 
 lib/orchestrate.nix (inside the temp file):
   1. fuzzer(seed + 0, topologyTarget) → topology-map
@@ -159,19 +162,14 @@ Returns a NixOS test derivation (result of `runner.run`).
 ## CLI Interface
 
 ```
-orchestrator.py run \
+topotestix orchestrator run nginx \
   --seed 5 \
-  --topology-target targets/topology/simple-cluster.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-smoke
+  --project-root .
 ```
 
-All paths relative to project root (auto-detected or via `--project-root`). `--topology-target` is **required** — always provide a topology, even for single-node tests.
+Target definitions live in `targets/default.nix`. Explicit path overrides still exist for advanced use, and `--project-root` controls where targets and the run store are resolved.
 
-## `orchestrator.py` Structure
+## `topotestix/orchestrator.py` Structure
 
 ```python
 def generate_nix_expr(args) -> str:
@@ -184,12 +182,12 @@ def parse_report(result_path: str) -> list[dict]:
     """Read and parse report.json from the build output."""
 
 def main():
-    """CLI entry point: parse args, generate expr, build, parse report, print summary."""
+    """CLI helpers: parse args, generate expr, build, parse report, print summary."""
 ```
 
 ## How Python Passes Paths to Nix
 
-Python generates a temp `.nix` file containing a `let ... in` expression that imports all the necessary modules and calls `orchestrate.nix`. This is the same approach as `run-smoke-test.sh`:
+Python generates a temp `.nix` file containing a `let ... in` expression that imports all the necessary modules and calls `orchestrate.nix`.
 
 ```nix
 let
@@ -197,8 +195,6 @@ let
   pkgs = nixpkgs.legacyPackages.x86_64-linux;
   lib = pkgs.lib;
 
-  topotestixLib = import /abs/path/to/lib { inherit lib; };
-  runner = import /abs/path/to/lib/runner.nix { inherit pkgs lib; testers = pkgs.testers; };
   orchestrate = import /abs/path/to/lib/orchestrate.nix { inherit pkgs lib; testers = pkgs.testers; };
 
   configTarget = import /abs/path/to/targets/config/nginx.nix { inherit lib; };
@@ -247,49 +243,25 @@ Two shrinking approaches, by priority:
 | **A: Choice-based shrinking** | Reduce choice indices toward 0, using target spec ordering | Phase 4 | Finds truly simpler configs. Target spec convention: lower index = simpler |
 | **B: Target-aware shrinking** | Use NixOS default values as baseline; weight shrinking toward error-prone configs | Future | More semantically meaningful. Requires querying NixOS module system |
 
-## Phase 2 Implementation Scope
-
-Files to create or modify:
-
-| File | Action |
-|---|---|
-| `lib/orchestrate.nix` | **Create** — full pipeline function |
-| `orchestrator/orchestrator.py` | **Rewrite** — CLI with `run` subcommand |
-| `lib/expand-topology.nix` | **Update** — return `{ nodeConfigs, nodeRoles }` |
-| `targets/nginx/test-script.py` | **Update** — `machine` → `machine1` |
-| `targets/nginx/properties.nix` | **Update** — `machine` → `machine1` |
-| `targets/topology/single-machine.nix` | **Create** — trivial topology for single-node tests |
-| `tests/expand-topology-test.nix` | **Update** — new output structure with nodeRoles |
-| `docs/plan.md` | **Update** — check off phase 2 items |
-
 ## Future Additions (Not Phase 2)
 
 - Selective property inclusion via `--property-name` CLI flag
-- Choice-based shrinking (Phase 4) — see [shrinking.md](shrinking.md)
 - Value-aware shrinking — use NixOS defaults as baseline, weight toward error-prone configs
 - Multi-seed execution / parallel builds (Phase 7)
-- TUI (Phase 6)
 - Failure-reproducing flake output
 - Runner as HTTP service
+- Richer TUI monitoring and attach mode
 
 ## Example of use:
 
-From the project root, with nix develop (which provides python3):
-nix develop -c python3 orchestrator/orchestrator.py run \
-  --seed 5 \
-  --topology-target targets/topology/single-machine.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-test
+From the project root, use the current CLI:
+
+```bash
+python3 -m topotestix.cli orchestrator run nginx --seed 5 --project-root .
+```
 
 To test a failing seed (nginx disabled):
-nix develop -c python3 orchestrator/orchestrator.py run \
-  --seed 1 \
-  --topology-target targets/topology/single-machine.nix \
-  --config-target targets/config/nginx.nix \
-  --base-module targets/nginx/module.nix \
-  --test-script targets/nginx/test-script.py \
-  --properties targets/nginx/properties.nix \
-  --name nginx-test-fail
+
+```bash
+python3 -m topotestix.cli orchestrator run nginx --seed 1 --project-root .
+```
