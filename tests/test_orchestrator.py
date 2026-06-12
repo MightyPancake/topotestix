@@ -38,6 +38,7 @@ class OrchestratorRenderingTests(unittest.TestCase):
         )
 
         self.assertIn('name = "nginx \\"quoted\\" test";', expr)
+        self.assertIn('reportNode = null;', expr)
         self.assertIn('topologyChoices = (builtins.fromJSON', expr)
         self.assertIn('configChoices = (builtins.fromJSON', expr)
         self.assertIn('builtins.toPath', expr)
