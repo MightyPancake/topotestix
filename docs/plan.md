@@ -113,8 +113,16 @@
 ## Phase 6: Text User Interface
 
 - [x] fuzzer CLI
-- [ ] runner CLI
-- [ ] orchestrator CLI & TUI
+- [x] Python package foundation with `topotestix` executable
+- [x] Nix target registry (`targets/default.nix`) as the source of truth for named SUT targets
+- [x] Target discovery CLI (`topotestix targets list/show`)
+- [x] Docker-like orchestrator CLI (`topotestix orchestrator run/fuzz/shrink/sweep`)
+- [x] Persistent run store under `.topotestix/runs`
+- [x] Run history CLI (`topotestix runs list/show/logs/report`)
+- [x] Practical runner CLI (`topotestix runner compose-script/inspect-report/show-properties`)
+- [x] Event-based execution model for CLI progress and TUI rendering
+- [x] Initial Textual TUI execution mode (`topotestix tui TARGET --seeds ...`)
+- [x] Compatibility wrapper for existing `orchestrator/orchestrator.py` commands
 
 ## Phase 7: Scale
 
