@@ -113,7 +113,7 @@ in
       finalNodeConfigs = lib.mapAttrs (nodeName: nodeTopoConfig:
         { pkgs, ... }:
         mergeMod.mergeConfigs {
-          base = baseModule { inherit pkgs; };
+          base = baseModule { inherit pkgs nodeName; };
           config = roleConfigs.${nodeRoles.${nodeName}};
           topology = nodeTopoConfig;
         }
