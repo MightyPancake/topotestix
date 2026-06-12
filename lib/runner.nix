@@ -1,13 +1,12 @@
 # TopoTestix Runner
 #
 # Composes NixOS test scripts with property-based testing harness and calls
-# testers.runNixOSTest. Property helpers are injected into the testScript;
-# properties are called at explicit checkpoints via _check().
+# testers.runNixOSTest. Property helpers are injected into the testScript and
+# property checks are appended after the user script.
 #
 # composeTestScript:
-#   Merges harness preamble, property setup, user testScript, property checks,
-#   and report footer into a single Python string. Does NOT auto-append
-#   composedProps.check — the property author explicitly writes _check() calls.
+#   Merges harness preamble, property setup, user testScript, auto-appended
+#   property checks, and report footer into a single Python string.
 #
 # run:
 #   Calls testers.runNixOSTest with the composed testScript and node configs.

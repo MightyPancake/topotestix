@@ -75,7 +75,7 @@ No special cases, no conditional naming. Count=1 still gets index: `machine1`, n
 
 Rationale:
 - Predictable and consistent
-- Decoupled from fuzzed count — names don't change when the fuzzer varies `nodeCount`
+- Decoupled from fuzzed role counts — names stay indexed and predictable for each expanded role
 - No name changes between different topology seeds
 
 Impact: single-node test scripts use `machine1` instead of `machine`.

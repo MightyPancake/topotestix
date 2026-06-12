@@ -24,6 +24,16 @@ in
     expected = {};
   };
 
+  testMkForceAttrsKeepsMkIfWhole = {
+    expr = mkForceAttrs { services.nginx = lib.mkIf true { enable = true; }; };
+    expected = { services = { nginx = lib.mkForce (lib.mkIf true { enable = true; }); }; };
+  };
+
+  testMkForceAttrsKeepsMkMergeWhole = {
+    expr = mkForceAttrs { services.nginx = lib.mkMerge [ { enable = true; } ]; };
+    expected = { services = { nginx = lib.mkForce (lib.mkMerge [ { enable = true; } ]); }; };
+  };
+
   testMergeConfigsBaseAndConfig = {
     expr = mergeConfigs {
       base = { services.nginx.enable = true; virtualisation.memorySize = 1024; };

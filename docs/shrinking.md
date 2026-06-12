@@ -10,7 +10,7 @@ The approach is **choice-based shrinking**, inspired by Hypothesis's internal re
 
 The simplest shrinking approach is to try smaller seed numbers: seed 1, 2, 3, ... and keep the smallest seed that still fails. This is easy to implement but has a fundamental problem:
 
-**Lower seeds don't produce simpler configs.** The fuzzer maps `seed → hash → mod → index`. Seed 1 might produce `{ nodeCount=5, memorySize=4096 }` while seed 3 might produce `{ nodeCount=2, memorySize=512 }`. The mapping is essentially random — there is no monotonic relationship between seed value and config simplicity.
+**Lower seeds don't produce simpler configs.** The fuzzer maps `seed → hash → mod → index`. Seed 1 might produce `{ roles.broker=3, memorySize=4096 }` while seed 3 might produce `{ roles.broker=1, memorySize=512 }`. The mapping is essentially random — there is no monotonic relationship between seed value and config simplicity.
 
 Seed-based shrinking finds "smallest seed that still fails," not "simplest config that still fails."
 
@@ -24,7 +24,7 @@ Target spec authors must order options from simplest to most complex:
 
 ```nix
 {
-  nodeCount = [ 1 2 3 5 ];              # index 0 = fewest nodes
+  roles.broker = [ 1 2 3 ];             # index 0 = fewest brokers
   memorySize = [ 512 1024 2048 4096 ];   # index 0 = least memory
   vlans = [ [ 1 ] [ 1 10 ] ];           # index 0 = simplest network
   enable = bool;                         # false (index 0) is simpler
@@ -104,7 +104,7 @@ fuzzer { seed = "42"; target = { memorySize = [512 1024 2048 4096]; }; }
 # }
 ```
 
-The `choices` attrset maps dot-separated paths to the index the fuzzer chose. Python uses these indices to drive the shrinking loop.
+The `choices` attrset maps target-relative dot-separated paths to the index the fuzzer chose. The seed is used only in the internal hash key for deterministic selection; it is not included in public choice keys. Python can pass these keys directly to `shrinker.apply`.
 
 ### Combinators change
 
@@ -155,7 +155,7 @@ in
 
   # List all choice paths in a target spec (paths where the value is a list).
   # Used by Python to know which dimensions are available for shrinking.
-  choicePaths = target: [ ".virtualisation.memorySize" ".nodeCount" ... ];
+  choicePaths = target: [ ".virtualisation.memorySize" ".roles.broker" ... ];
 
   # Get the value at a specific index in a target's option list.
   # Used by Python to display what each index maps to.
@@ -301,7 +301,7 @@ def shrink(master_seed, args):
 Shrunk cases are reproduced with overrides, not just a seed:
 
 ```bash
-orchestrator.py run --seed 42 --topology-overrides '{"\\.nodeCount": 0}' --config-overrides '{"broker": {"\\.memorySize": 0}}'
+orchestrator.py run --seed 42 --topology-choices '{".roles.broker": 0}' --config-choices '{"broker": {".virtualisation.memorySize": 0}}'
 ```
 
 ### Nix eval queries for shrinking
@@ -339,7 +339,7 @@ nix eval --impure --json --expr '
 | Shrinker is identity on empty choices | No overrides = no change | Normal (un-shrunk) pipeline works without any shrinking logic. |
 | `bool` = `[false true]` | Index 0 = false | Consistent with "lower index = simpler" convention. Disabled services are simpler. |
 | Fuzzer returns `{ result, choices }` | Choices alongside values | Python needs indices to drive shrinking; choices map is compact (integers) and avoids re-serializing Nix values. |
-| Choices are path strings (e.g. `".memorySize"`) | Dot-separated paths | Consistent with combinators.resolve's internal path representation. Easy for Python to manipulate. |
+| Choices are target-relative path strings (e.g. `".virtualisation.memorySize"`) | Dot-separated paths with a leading dot | The seed is used only in the hash key, so fuzzer choices are directly usable with `shrinker.apply`. |
 | Per-dimension independent shrinking | Each dimension shrunk separately | Topology, then each role config. Preserves independence between dimensions. |
 
 ---
@@ -356,12 +356,7 @@ Currently, "simplest" = first element in target spec option list. A future impro
 
 ### Inter-field constraint shrinking
 
-The `dependent` combinator in `combinators.nix` handles inter-field constraints (e.g., `diskSize` must exceed `memorySize`). When shrinking `memorySize` to a smaller value, the constraint may no longer hold. Options:
-1. Accept invalid configs temporarily during shrinking — they may still trigger the bug.
-2. Skip constraint validation during shrinking — the dependent function is resolved away by the fuzzer.
-3. Add constraint-aware shrinking that validates overrides against dependents.
-
-Option 2 is the simplest: since `dependent` is resolved at fuzzer time, the shrinker operates on flat attrsets where constraints are already resolved.
+Inter-field dependent combinators are future work. If they are added, shrinking will need a constraint-aware policy for overrides that make one field inconsistent with another.
 
 ### Shrinking order
 

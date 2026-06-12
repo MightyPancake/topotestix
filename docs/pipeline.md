@@ -88,7 +88,7 @@
 
 ```
 Input:  (master_seed, topology_target)
-Output: { result = topology_map, choices = { ".nodeCount" = 1; ".roles.broker" = 0; ... } }
+Output: { result = topology_map, choices = { ".roles.broker" = 0; ".brokerVlans" = 1; ... } }
 
 master_seed = 42
 seed = str(master_seed + 0) = "42"
@@ -96,7 +96,6 @@ seed = str(master_seed + 0) = "42"
 fuzzer {
   seed = "42";
   target = {
-    nodeCount         = [ 1 3 5 ];
     roles.broker      = [ 1 2 3 ];
     roles.controller  = [ 1 ];
     brokerVlans        = [ [ 1 ] [ 1 10 ] ];
@@ -105,14 +104,12 @@ fuzzer {
 }
 # => {
 #   result = {
-#     nodeCount        = 3;
 #     roles.broker     = 2;
 #     roles.controller = 1;
 #     brokerVlans      = [ 1 10 ];
 #     controllerVlans  = [ 2 10 ];
 #   };
 #   choices = {
-#     ".nodeCount"          = 1;   # index 1 → value 3
 #     ".roles.broker"       = 1;   # index 1 → value 2
 #     ".roles.controller"   = 0;   # index 0 → value 1
 #     ".brokerVlans"        = 1;   # index 1 → value [1 10]
@@ -148,10 +145,9 @@ shrinker.apply topologyTarget fuzzedTopology.result {}
 # => fuzzedTopology.result  (unchanged)
 
 # With shrinking override — replace choice at path with lower index:
-shrinker.apply topologyTarget fuzzedTopology.result { ".nodeCount" = 0; }
+shrinker.apply topologyTarget fuzzedTopology.result { ".roles.broker" = 0; }
 # => {
-#      nodeCount        = 1;      # overridden to index 0 → value 1 (was 3)
-#      roles.broker     = 2;      # unchanged from fuzzer
+#      roles.broker     = 1;      # overridden to index 0 → value 1 (was 2)
 #      roles.controller = 1;      # unchanged from fuzzer
 #      brokerVlans      = [1 10]; # unchanged from fuzzer
 #      controllerVlans  = [2 10]; # unchanged from fuzzer
@@ -170,7 +166,7 @@ let
   topologyTarget = import ./targets/topology/simple-cluster.nix { inherit lib; };
   fuzzedTopology = fuzzer { seed = "42"; target = topologyTarget; };
 in
-shrinker.apply topologyTarget fuzzedTopology.result { ".nodeCount" = 0; }
+shrinker.apply topologyTarget fuzzedTopology.result { ".roles.broker" = 0; }
 '
 ```
 
@@ -184,7 +180,6 @@ Output: { nodeConfigs, nodeRoles }
 
 expandTopology {
   topology-map = {
-    nodeCount        = 3;
     roles.broker     = 2;
     roles.controller = 1;
     brokerVlans      = [ 1 10 ];
@@ -535,7 +530,7 @@ Target spec authors must order option lists from simplest to most complex. This 
 ```nix
 # CORRECT — simplest values first:
 {
-  nodeCount   = [ 1 3 5 ];              # 1 node is simplest
+  roles.broker = [ 1 2 3 ];             # 1 broker is simplest
   memorySize  = [ 512 1024 2048 4096 ];  # least memory is simplest
   vlans       = [ [ 1 ] [ 1 10 ] ];      # single VLAN is simplest
   enable      = bool;                     # false (index 0) is simplest
@@ -543,7 +538,7 @@ Target spec authors must order option lists from simplest to most complex. This 
 
 # WRONG — no clear ordering, shrinking will not work well:
 {
-  nodeCount   = [ 5 1 3 ];               # not ordered
+  roles.broker = [ 3 1 2 ];             # not ordered
   memorySize  = [ 4096 512 1024 2048 ];   # not ordered
 }
 ```
@@ -606,8 +601,8 @@ nix develop -c python3 orchestrator/orchestrator.py run \
   --test-script targets/nginx/test-script.py \
   --properties targets/nginx/properties.nix \
   --name nginx-test \
-  --topology-choices '{"nodeCount": 0}' \
-  --config-choices '{"broker": {"memorySize": 0}}'
+  --topology-choices '{".roles.broker": 0}' \
+  --config-choices '{"broker": {".virtualisation.memorySize": 0}}'
 ```
 
 ---

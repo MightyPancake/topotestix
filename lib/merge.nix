@@ -33,9 +33,12 @@
 { lib }:
 
 let
+  isSpecialAttrs = value:
+    (value ? _type) || (lib.isDerivation value) || (value ? type && value.type == "derivation");
+
   mkForceAttrs = attrs:
     lib.mapAttrs (name: value:
-      if builtins.isAttrs value then
+      if builtins.isAttrs value && !(isSpecialAttrs value) then
         mkForceAttrs value
       else
         lib.mkForce value

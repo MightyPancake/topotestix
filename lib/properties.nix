@@ -39,13 +39,8 @@
 #   #   check = "check_no_message_lost(produced, consumed)\ncheck_service_responds(machine)\n";
 #   # }
 #
-# The runner then injects `setup` at the beginning and `check` at each checkpoint
-# in the testScript.
-#
-# NOTE: This is currently a stub — the interface is correct but it has not been
-# tested against actual NixOS test scripts yet. The runner integration (how setup/check
-# get injected into testScript) also doesn't exist yet. This will become a real module
-# when the properties framework is implemented in Phase 1 of the plan.
+# The runner injects `setup` near the beginning of the test script and appends
+# `check` after the user test script. Future work may add explicit checkpoints.
 #
 { lib }:
 

@@ -10,4 +10,10 @@ let
 in
 {
   inherit combinators fuzzer expand-topology merge properties shrinker;
+
+  runnerFor = { pkgs, testers }:
+    import ./runner.nix { inherit pkgs lib testers; };
+
+  orchestrateFor = { pkgs, testers }:
+    import ./orchestrate.nix { inherit pkgs lib testers; };
 }

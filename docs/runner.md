@@ -150,7 +150,7 @@ machine.succeed("nginx -t")
 machine.succeed("systemctl start nginx")
 machine.wait_for_unit("nginx")
 
-# --- explicit checkpoint ---
+# --- auto-appended property check ---
 _check("nginx-responds-to-http", check_nginx_responds, machine)
 
 # --- report writing ---
@@ -169,7 +169,7 @@ if not _all_passed:
 |---|---|---|
 | `_check()` catches exceptions, does NOT re-raise | Test continues after property failures | All properties always get evaluated; report captures everything |
 | No `try/finally` wrapper around user testScript | If bare `succeed()` fails before report, no report.json (test still fails) | Keeping it simple; `try/finally` can be added later |
-| `composedProps.check` NOT auto-appended | User places `_check()` calls explicitly | Explicit checkpoints per architecture.md |
+| `composedProps.check` auto-appended | Runner appends checks after the user script | Explicit checkpoints are future work |
 | Report via `copy_from_machine` | report.json lands in `$out/report.json` | More reliable than stdout parsing; replaces deprecated `copy_from_vm` |
 | JSON via base64 encoding | Avoids shell escaping issues in `machine.succeed()` | JSON contains quotes, newlines, etc. |
 | mkForce only on fuzzed layers | Base config is plain, fuzzed config and topology get mkForce | Fuzzer outputs pure attrsets; priority is applied at merge time (see [merge.md](merge.md)) |

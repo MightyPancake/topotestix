@@ -8,8 +8,8 @@ Three modules, with the **orchestrator** as the central coordinator:
  ┌──────────────────────────────────────────────────────────────┐
  │                      Orchestrator (Python CLI)               │
  │                                                              │
- │  - Derives per-node seeds from master_seed                   │
- │  - Calls fuzzer N times (once per node, once for topology)   │
+ │  - Derives topology and per-role seeds from master_seed      │
+ │  - Calls fuzzer once for topology and once per role          │
  │  - Calls expandTopology (topology-map → per-node VLANs)      │
  │  - Three-layer merge: base ⊕ config ⊕ topology               │
  │  - Calls runner, parses report.json                          │
@@ -24,11 +24,11 @@ Three modules, with the **orchestrator** as the central coordinator:
  │    (Nix lib)    │          │  (NixOS Test)   │
  │                 │          │                 │
  │  seed + target  │          │  Inputs:        │
- │  → flat attrset │─────────▶│  - node configs │
- │                 │          │  - testScript   │
- │  (called N      │          │  - properties   │
- │   times, once   │          │                 │
- │   per node)     │          │  Output:        │
+ │  → { result,    │─────────▶│  - node configs │
+ │      choices }  │          │  - testScript   │
+ │  (once for      │          │  - properties   │
+ │   topology,     │          │                 │
+ │   once/role)    │          │  Output:        │
  │                 │          │  - report.json  │
  └─────────────────┘          └─────────────────┘
 
@@ -63,35 +63,34 @@ Each node's final config is built from three independent layers, merged by the o
 
 ```
 base config  ⊕  fuzzed target configs  ⊕  fuzzed topology configs  =  final node config
-(stable)       (per-node, from fuzzer)   (per-node, from fuzzer + expandTopology)
+(stable)       (per-role, from fuzzer)   (per-node, from fuzzer + expandTopology)
 ```
 
 | Layer | Source | Example options | Applied to |
 |---|---|---|---|
 | **Base config** | User-provided | `environment.systemPackages`, `services.kafka.enable` | All nodes identically |
-| **Fuzzed target configs** | Fuzzer (per-node call) | `virtualisation.memorySize`, `services.openssh.enable` | Each node gets its own fuzzer call |
+| **Fuzzed target configs** | Fuzzer (per-role call) | `virtualisation.memorySize`, `services.openssh.enable` | Nodes of the same role share one fuzzer call |
 | **Fuzzed topology configs** | Fuzzer (topology call) + expandTopology | `virtualisation.vlans`, role-specific configs | Per-node, derived from topology-map |
 
 ```nix
 # Base config (same for all nodes)
 baseConfig = { services.openssh.enable = true; environment.systemPackages = [ pkgs.vim ]; };
 
-# Fuzzed target config (one fuzzer call per node)
-broker1Config     = fuzzer { seed = 43; target = configSpec; };  # => { memorySize = 2048; ... }
-broker2Config     = fuzzer { seed = 44; target = configSpec; };  # => { memorySize = 1024; ... }
-controller1Config = fuzzer { seed = 45; target = configSpec; };  # => { memorySize = 512; ... }
+# Fuzzed target config (one fuzzer call per role)
+brokerConfig     = (fuzzer { seed = "43"; target = configSpec; }).result;
+controllerConfig = (fuzzer { seed = "44"; target = configSpec; }).result;
 
 # Fuzzed topology config (one fuzzer call → topology-map, then expandTopology)
-topology-map = fuzzer { seed = 42; target = topologySpec; };
-# => { nodeCount = 3; brokerVlans = [1 10]; controllerVlans = [2 10]; roles = { broker = 2; controller = 1; }; }
+topology-map = (fuzzer { seed = "42"; target = topologySpec; }).result;
+# => { brokerVlans = [1 10]; controllerVlans = [2 10]; roles = { broker = 2; controller = 1; }; }
 
 topologyConfigs = expandTopology { inherit topology-map; };
 # => { broker1.vlans = [1 10]; broker2.vlans = [1 10]; controller1.vlans = [2 10]; }
 
 # Final composition (orchestrator merges all three per node)
-finalConfigs.broker1     = recursiveUpdate (recursiveUpdate baseConfig broker1Config)     topologyConfigs.broker1;
-finalConfigs.broker2     = recursiveUpdate (recursiveUpdate baseConfig broker2Config)     topologyConfigs.broker2;
-finalConfigs.controller1 = recursiveUpdate (recursiveUpdate baseConfig controller1Config) topologyConfigs.controller1;
+finalConfigs.broker1     = recursiveUpdate (recursiveUpdate baseConfig brokerConfig)     topologyConfigs.broker1;
+finalConfigs.broker2     = recursiveUpdate (recursiveUpdate baseConfig brokerConfig)     topologyConfigs.broker2;
+finalConfigs.controller1 = recursiveUpdate (recursiveUpdate baseConfig controllerConfig) topologyConfigs.controller1;
 ```
 
 ### Data Flow
@@ -101,13 +100,12 @@ Orchestrator (Python CLI)
   │
   │  master_seed = 42
   │
-  ├─ fuzzer(master_seed, topology_spec)  →  topology-map (nodeCount, roles, VLANs)
+  ├─ fuzzer(master_seed, topology_spec)  →  topology-map (roles, VLANs)
   │
   ├─ expandTopology(topology-map)         →  per-node topology configs (VLAN assignments)
   │
-  ├─ fuzzer(master_seed+1, config_spec)   →  broker1 target config
-  ├─ fuzzer(master_seed+2, config_spec)   →  broker2 target config
-  ├─ fuzzer(master_seed+3, config_spec)   →  controller1 target config
+  ├─ fuzzer(master_seed+1, config_spec)   →  broker target config
+  ├─ fuzzer(master_seed+2, config_spec)   →  controller target config
   │
   ├─ merge per node: base ⊕ target config ⊕ topology config
   │
@@ -127,7 +125,7 @@ topotestix/
 │   ├── fuzzer.nix                # seed + target → flat attrset (pure, no cluster awareness)
 │   ├── expand-topology.nix       # topology-map → per-node VLAN configs (deterministic, no seed)
 │   ├── merge.nix                 # mkForceAttrs, mergeConfigs — three-layer config composition
-│   ├── combinators.nix           # choose, range, bool, oneOf, dependent
+│   ├── combinators.nix           # choose, range, bool, oneOf
 │   ├── properties.nix            # Property → Python assertion helpers
 │   └── runner.nix                # composeTestScript, run — wraps runNixOSTest with harness
 │
@@ -154,20 +152,21 @@ topotestix/
 
 ### Fuzzer
 
-Pure function: `seed + target → flat attrset`. No cluster awareness, no node naming, no topology logic.
+Pure function: `seed + target → { result, choices }`. No cluster awareness, no node naming, no topology logic.
 
 #### Mechanism
 
 Seed → deterministic hash → choice per option. Same seed always produces the same config.
 
-The fuzzer is called multiple times by the orchestrator — once for topology, once per node for config — each with a derived seed.
+The fuzzer is called multiple times by the orchestrator — once for topology, once per role for config — each with a derived seed.
 
 **Input:**
 - `seed` — integer
 - `target` — Nix attribute set describing fuzzable dimensions
 
 **Output:**
-- Flat attribute set of resolved values
+- `result`: flat attribute set of resolved values
+- `choices`: target-relative path map such as `{ ".virtualisation.memorySize" = 2; }`
 
 ```nix
 fuzzer {
@@ -177,22 +176,23 @@ fuzzer {
     services.openssh.enable = [ true false ];
   };
 }
-# => { virtualisation.memorySize = 2048; services.openssh.enable = false; }
+# => { result = { virtualisation.memorySize = 2048; services.openssh.enable = false; };
+#      choices = { ".virtualisation.memorySize" = 2; ".services.openssh.enable" = 0; }; }
 ```
 
 ```nix
 fuzzer {
   seed = 42;
   target = {
-    nodeCount = [ 2 3 5 ];
     roles.broker = [ 1 2 3 ];
     roles.controller = [ 1 ];
     brokerVlans = [ [1] [1 10] ];
     controllerVlans = [ [2] [2 10] ];
   };
 }
-# => { nodeCount = 3; roles.broker = 2; roles.controller = 1;
-#      brokerVlans = [1 10]; controllerVlans = [2 10]; }
+# => { result = { roles.broker = 2; roles.controller = 1;
+#      brokerVlans = [1 10]; controllerVlans = [2 10]; };
+#      choices = { ".roles.broker" = 1; ...; }; }
 ```
 
 Note: both calls use the same mechanism. The fuzzer doesn't know or care whether it's resolving topology or config — it just picks values from lists based on a seed.
@@ -203,14 +203,13 @@ Shared combinator language:
 
 ```nix
 {
-  bool      = [ true false ];
-  range     = min: max: lib.genList (i: min + i) (max - min);
+  bool      = [ false true ];
+  range     = min: max: step: [ min ... max ];
   oneOf     = options: options;
-  dependent = name: f: { _depends = name; _fn = f; };
 }
 ```
 
-`dependent` handles inter-field constraints (e.g., `diskSize` must exceed `memorySize`).
+Inter-field dependent combinators are future work and are not implemented in the current library.
 
 #### Shrinking
 
@@ -233,7 +232,7 @@ Pure deterministic function: `topology-map → per-node VLAN configs`. No seed, 
 Takes the flat output of a topology fuzzer call and mechanically expands it into per-node attribute sets.
 
 **Input:**
-- `topology-map` — flat attribute set from topology fuzzer call (nodeCount, roles, VLAN sets per role)
+- `topology-map` — flat attribute set from topology fuzzer call (roles and VLAN sets per role)
 
 **Output:**
 - Per-node attribute set with `virtualisation.vlans` assignments
@@ -241,7 +240,6 @@ Takes the flat output of a topology fuzzer call and mechanically expands it into
 ```nix
 expandTopology {
   topology-map = {
-    nodeCount = 3;
     roles = { broker = 2; controller = 1; };
     brokerVlans = [1 10];
     controllerVlans = [2 10];
@@ -293,7 +291,7 @@ Based on NixOS `testers.runNixOSTest`. Thin wrapper that composes inputs into a 
 
 **Output:** `report.json` (structured test results via `copy_from_machine`), test derivation pass/fail
 
-Properties are called at explicit checkpoints via `_check()` — not auto-appended. The `_check()` function catches all exceptions and does not re-raise, so all properties are always evaluated even after failures.
+Property checks are currently auto-appended after the user test script. The `_check()` function catches all exceptions and does not re-raise, so all properties are always evaluated even after failures. Explicit checkpoints are future work.
 
 ---
 
@@ -303,19 +301,17 @@ Python CLI application. Central coordinator — other modules interact through i
 
 **Seed derivation:** The orchestrator derives all seeds from a single `master_seed`:
 - `master_seed + 0` → topology fuzzer call
-- `master_seed + 1` → node 0 (broker1) config fuzzer call
-- `master_seed + 2` → node 1 (broker2) config fuzzer call
-- `master_seed + N` → node N-1 config fuzzer call
+- `master_seed + 1 + roleIndex` → per-role config fuzzer call, with role names sorted alphabetically
 
 This ensures reproducibility from a single seed and makes shrinking straightforward — change the master seed, and everything changes deterministically.
 
 **Responsibilities:**
 1. Accept user input (testScript, base config, config target spec, topology target spec)
-2. Derive per-node seeds from master_seed
+2. Derive topology and per-role seeds from master_seed
 3. Call fuzzer for topology → topology-map
 4. Call expandTopology(topology-map) → per-node VLAN configs
-5. Call fuzzer once per node → per-node config
-6. Three-layer merge: `base ⊕ per-node config ⊕ per-node topology config`
+5. Call fuzzer once per role → per-role config
+6. Three-layer merge: `base ⊕ per-role config ⊕ per-node topology config`
 7. Call runner with composed final node configs
 8. Parse report.json / stdout from runner
 9. On failure: shrink choice indices and iterate (see [shrinking.md](shrinking.md))
@@ -344,13 +340,13 @@ Each choice is shrunk independently: topology choices first, then per-role confi
 ## Design Principles
 
 1. **Orchestrator is central** — other modules interact through it, not with each other
-2. **Fuzzer is pure: seed + target → flat attrset** — no cluster logic, no node naming, no awareness of how many times it's called
+2. **Fuzzer is pure: seed + target → { result, choices }** — no cluster logic, no node naming, no awareness of how many times it's called
 3. **expandTopology is a separate pure function** — deterministic expansion, no seed, no randomness
 4. **Three-layer config composition** — base config ⊕ fuzzed target configs ⊕ fuzzed topology configs = final node config, merged via `lib.recursiveUpdate`
 5. **Topology outputs per-node attribute sets** — VLANs, roles are NixOS options merged like any other config layer
 6. **VLAN membership is per-node lists** — enables mixed topologies (shared + isolated VLANs), partitions, and network variations
 7. **Seed-as-key** — all seeds derived from master_seed. Reproducibility from one number. Shrinking operates on choice indices, not seeds (see [shrinking.md](shrinking.md)).
-8. **Properties are Python helpers defined in Nix** — reusable across SUTs, injected into testScript by runner, called at explicit checkpoints
+8. **Properties are Python helpers defined in Nix** — reusable across SUTs, injected into testScript by runner, and currently auto-appended after the user script
 9. **Fuzzer outputs only fuzzed options** — base config is added by orchestrator, keeping the fuzzer's responsibility minimal
 10. **Every module usable from CLI** — fuzzer, expandTopology, runner, and orchestrator each have a CLI interface
 11. **Lazy evaluation leveraged** — runner imports fuzzer via Nix, so only evaluated configs are built
