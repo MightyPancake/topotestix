@@ -250,7 +250,7 @@ orchestrate = { seed
     # ... rest unchanged ...
 ```
 
-### Python `orchestrator.py` — `--shrink` mode
+### Python `topotestix.orchestrator` — `shrink` mode
 
 ```python
 def shrink(master_seed, args):
@@ -301,7 +301,9 @@ def shrink(master_seed, args):
 Shrunk cases are reproduced with overrides, not just a seed:
 
 ```bash
-orchestrator.py run --seed 42 --topology-choices '{".roles.broker": 0}' --config-choices '{"broker": {".virtualisation.memorySize": 0}}'
+python3 -m topotestix.cli orchestrator run kafka-cluster --seed 42 --project-root . \
+  --topology-choices '{".roles.broker": 0}' \
+  --config-choices '{"broker": {".virtualisation.memorySize": 0}}'
 ```
 
 ### Nix eval queries for shrinking

@@ -22,7 +22,7 @@ Based on NixOS `testers.runNixOSTest`. Thin Nix wrapper that composes inputs int
 
 Composes the full testScript and calls `testers.runNixOSTest`.
 
-**`composeTestScript`**: Merges property setup, user testScript, and report harness into a single Python string. Does NOT auto-append `composedProps.check` — the user calls `_check()` explicitly at checkpoints.
+**`composeTestScript`**: Merges property setup, user testScript, auto-appended property checks, and report harness into a single Python string.
 
 **`run`**: Calls `testers.runNixOSTest` with composed testScript and provided nodeConfigs.
 
@@ -73,7 +73,7 @@ This makes the test derivation fail (non-zero exit), while the report.json is st
 
 ### `reportNode` parameter
 
-Specifies which VM node writes the report. Defaults to the first node in `nodeConfigs`. For single-node tests this is `"machine"`. For multi-node tests, the user can specify which node should collect and write the report.
+Specifies which VM node writes the report. Defaults to the first node in `nodeConfigs`. For single-node tests this is usually `machine1`. For multi-node tests, the user can specify which node should collect and write the report.
 
 ```nix
 reportNode = lib.head (builtins.attrNames nodeConfigs)  # default
