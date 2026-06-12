@@ -40,79 +40,79 @@
 - [x] Create shrinker tests (`tests/shrinker-test.nix`)
 - [x] Update `lib/orchestrate.nix` — add `topologyChoices` and `configChoices` parameters, pass through shrinker
 - [x] Update `orchestrator/orchestrator.py` — add `--shrink <master_seed>` mode, shrinking loop, `--topology-choices`/`--config-choices` for `run`
-- [ ] End-to-end shrinking verification with nginx SUT
+- [x] End-to-end shrinking verification with nginx SUT
 
 ## Phase 4.1: Fuzzer/Shrinker Contract Fix
 
-- [ ] Change fuzzer choices to target-relative paths like `.virtualisation.memorySize` and `.roles.machine`
-- [ ] Keep the seed only in the hash key used for deterministic value selection, not in the public choices map
-- [ ] Update fuzzer and shrinker docs to describe the target-relative choices contract
-- [ ] Update existing fuzzer/combinator tests affected by the choices path change
+- [x] Change fuzzer choices to target-relative paths like `.virtualisation.memorySize` and `.roles.machine`
+- [x] Keep the seed only in the hash key used for deterministic value selection, not in the public choices map
+- [x] Update fuzzer and shrinker docs to describe the target-relative choices contract
+- [x] Update existing fuzzer/combinator tests affected by the choices path change
 
 ## Phase 4.2: Cross-Module Shrinking Tests
 
-- [ ] Add tests proving `fuzzer.choices` keys are directly usable with `shrinker.apply`
-- [ ] Add config pipeline tests for `fuzzer -> shrinker`
-- [ ] Add topology pipeline tests for `fuzzer -> shrinker -> expandTopology`
-- [ ] Add tests that every `fuzzer.choices` key exists in `shrinker.choicePaths target`
+- [x] Add tests proving `fuzzer.choices` keys are directly usable with `shrinker.apply`
+- [x] Add config pipeline tests for `fuzzer -> shrinker`
+- [x] Add topology pipeline tests for `fuzzer -> shrinker -> expandTopology`
+- [x] Add tests that every `fuzzer.choices` key exists in `shrinker.choicePaths target`
 
 ## Phase 4.3: Python Shrink CLI
 
-- [ ] Implement real `orchestrator.py --shrink` support
-- [ ] Add `--topology-choices` and `--config-choices` to `run` for reproducing shrunk cases
-- [ ] Print final reproducible command and override maps after shrinking
-- [ ] Add Python tests for argument parsing and generated shrink inputs where practical
+- [x] Implement real `orchestrator.py --shrink` support
+- [x] Add `--topology-choices` and `--config-choices` to `run` for reproducing shrunk cases
+- [x] Print final reproducible command and override maps after shrinking
+- [x] Add Python tests for argument parsing and generated shrink inputs where practical
 
 ## Phase 4.4: Python/Nix Boundary Hardening
 
-- [ ] Explore safer alternatives to raw Python-generated Nix string interpolation
-- [ ] Escape Nix strings safely, especially `name`
-- [ ] Render paths safely, including paths with spaces or special characters
-- [ ] Consider passing structured values through JSON (`builtins.fromJSON`) or generated parameter files
-- [ ] Add tests for generated Nix expressions with unusual names and paths
+- [x] Explore safer alternatives to raw Python-generated Nix string interpolation
+- [x] Escape Nix strings safely, especially `name`
+- [x] Render paths safely, including paths with spaces or special characters
+- [x] Consider passing structured values through JSON (`builtins.fromJSON`) or generated parameter files
+- [x] Add tests for generated Nix expressions with unusual names and paths
 
 ## Phase 4.5: Merge Safety
 
-- [ ] Explore alternatives to blindly recursing through every attrset in `mkForceAttrs`
-- [ ] Treat module/meta attrsets such as `_type`, `mkIf`, `mkMerge`, and derivation-like values carefully
-- [ ] Add merge tests for special attrsets before changing behavior
-- [ ] Pick the smallest safe merge behavior that preserves fuzzed option priority
+- [x] Explore alternatives to blindly recursing through every attrset in `mkForceAttrs`
+- [x] Treat module/meta attrsets such as `_type`, `mkIf`, `mkMerge`, and derivation-like values carefully
+- [x] Add merge tests for special attrsets before changing behavior
+- [x] Pick the smallest safe merge behavior that preserves fuzzed option priority
 
 ## Phase 4.6: Validation Safeguards
 
-- [ ] Add clear errors for empty choice lists
-- [ ] Validate `range` inputs (`step = 0`, incompatible bounds, invalid direction)
-- [ ] Add clear errors for invalid shrinker paths
-- [ ] Add clear errors for out-of-range shrinker indices
-- [ ] Add tests for invalid combinator and shrinker inputs
+- [x] Add clear errors for empty choice lists
+- [x] Validate `range` inputs (`step = 0`, incompatible bounds, invalid direction)
+- [x] Add clear errors for invalid shrinker paths
+- [x] Add clear errors for out-of-range shrinker indices
+- [x] Add tests for invalid combinator and shrinker inputs
 
 ## Phase 4.7: Current-Behavior Documentation Cleanup
 
-- [ ] Update docs to say config fuzzing is currently per-role, not per-node
-- [ ] Update docs to say property checks are currently auto-appended; explicit checkpoints are future work
-- [ ] Remove `nodeCount` from docs/examples unless it becomes enforced by `expandTopology`
-- [ ] Remove or mark unimplemented `dependent` combinator references as future work
-- [ ] Fix stale comments in `lib/properties.nix`
+- [x] Update docs to say config fuzzing is currently per-role, not per-node
+- [x] Update docs to say property checks are currently auto-appended; explicit checkpoints are future work
+- [x] Remove `nodeCount` from docs/examples unless it becomes enforced by `expandTopology`
+- [x] Remove or mark unimplemented `dependent` combinator references as future work
+- [x] Fix stale comments in `lib/properties.nix`
 
 ## Phase 4.8: Library Export Cleanup
 
-- [ ] Export `runner` and `orchestrate` from `lib/default.nix`, or document why they are intentionally imported directly
-- [ ] Keep import interfaces clean for modules that require `pkgs` and `testers`
+- [x] Export `runner` and `orchestrate` from `lib/default.nix`, or document why they are intentionally imported directly
+- [x] Keep import interfaces clean for modules that require `pkgs` and `testers`
 
 ## Phase 4.9: Repository Cleanup
 
-- [ ] Archive `experiments/` under docs or clearly mark it as historical/non-production material
-- [ ] Add a short README for archived experiments explaining their status
-- [ ] Add minimal CI that runs `nix flake check`
-- [ ] Add Python formatting/linting setup if `orchestrator.py` grows during shrink implementation
+- [x] Archive `experiments/` under docs or clearly mark it as historical/non-production material
+- [x] Add a short README for archived experiments explaining their status
+- [x] Add minimal CI that runs `nix flake check`
+- [x] Add Python formatting/linting setup if `orchestrator.py` grows during shrink implementation
 
 ## Phase 5: Real SUT
 
-- [ ] Kafka SUT target (base module, properties, test-script, config target)
+- [x] Kafka SUT targets (single-node and multi-node base modules, properties, test scripts, config targets)
 
 ## Phase 6: Text User Interface
 
-- [ ] fuzzer CLI
+- [x] fuzzer CLI
 - [ ] runner CLI
 - [ ] orchestrator CLI & TUI
 
@@ -151,7 +151,7 @@
 - Runner composes testScript: harness preamble → property setup → user testScript → explicit `_check()` calls → report writing → assertion on failures
 - `_check()` catches all exceptions and does NOT re-raise — all properties always get evaluated
 - Report written via `copy_from_machine` to `$out/report.json`; JSON encoded as base64 to avoid shell escaping
-- `composedProps.check` NOT auto-appended — user places `_check()` calls explicitly (explicit checkpoints)
+- `composedProps.check` is currently auto-appended after the user test script; explicit checkpoints are future work
 - Simple SUT (nginx) validates the pipeline end-to-end before bringing in Kafka's long build times
 - Smoke test is manual: run a single seed through fuzzer → merge → runner, verify report.json output
 - Phase 2 shrinking: not in scope. Phase 4 adds choice-based shrinking — the shrinker module reduces option indices toward 0 (lower index = simpler value). See [shrinking.md](shrinking.md).
