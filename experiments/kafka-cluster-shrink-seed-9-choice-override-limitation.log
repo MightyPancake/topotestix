@@ -1,0 +1,10 @@
+Running kafka-cluster seed=9
+
+============================================================
+ TopoTestix Results
+ Seed: 9
+ Name: kafka-cluster-shrink-9-log-segment
+============================================================
+
+ VM test FAILED (build error)
+ Run dir: /home/freerat/projects/topotestix/.topotestix/runs/20260615-172601-kafka-cluster-seed-9-kafka-cluster-shrink-9-log-segment

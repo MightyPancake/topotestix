@@ -4,6 +4,8 @@
 
 Tests use [nix-unit](https://github.com/nix-community/nix-unit), a Nix unit testing framework that evaluates attribute sets of test expressions and compares them against expected values.
 
+For interpretation of the Kafka empirical sweep results, see [empirical-kafka-cluster.md](empirical-kafka-cluster.md). That document explains why the Kafka findings should be framed as production-relevant configuration/workload incompatibilities rather than Kafka implementation bugs.
+
 ## Installing nix-unit
 
 ### Option 1: Build from source

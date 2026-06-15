@@ -1,0 +1,31 @@
+Running kafka-cluster seed=1
+
+============================================================
+ TopoTestix Results
+ Seed: 1
+ Name: kafka-cluster-min-message-max
+============================================================
+  FAIL  kafka-large-message-on-kafka1: WARNING: Due to limitations in metric names, topics with a period ('.') or underscore ('_') could collide. To avoid issues it is best to use either, but not both.
+Created topic topotestix_large.
+Warning: --producer-property is deprecated and will be removed in a future version. Use --command-property instead.
+[2026-06-15 17:28:38,231] ERROR Error when sending message to topic topotestix_large with key: null, value: 1572864 bytes with error: (org.apache.kafka.clients.producer.internals.ErrorLoggingCallback)
+org.apache.kafka.common.errors.RecordTooLargeException: The request included a message larger than the max message size the server will accept.
+[2026-06-15 17:29:03,056] ERROR Error processing message, terminating consumer process:  (org.apache.kafka.tools.consumer.ConsoleConsumer)
+org.apache.kafka.common.errors.TimeoutException
+Processed a total of 0 messages
+large message roundtrip consumed too few bytes: expected_at_least=1572864 actual=114
+
+  PASS  kafka-multi-topic-on-kafka1
+  PASS  kafka-still-up-kafka1
+  PASS  kafka-still-up-kafka2
+  PASS  kafka-still-up-kafka3
+  PASS  kafka-roundtrip-on-kafka1
+  PASS  kafka-roundtrip-on-kafka2
+  PASS  kafka-roundtrip-on-kafka3
+  PASS  kafka-topic-visible-from-kafka1
+  PASS  kafka-topic-visible-from-kafka2
+  PASS  kafka-topic-visible-from-kafka3
+
+ Overall: FAILED
+ Run dir: /home/freerat/projects/topotestix/.topotestix/runs/20260615-172715-kafka-cluster-seed-1-kafka-cluster-min-message-max
+============================================================

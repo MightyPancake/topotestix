@@ -12,8 +12,8 @@ Four SUTs, ordered by thesis importance:
 
 | SUT | Nodes | System type | Thesis role | Status |
 |---|---|---|---|---|
-| **kafka-cluster** | 3 | Log-based messaging (KRaft) | Headline: replication, partition tolerance | Expand (see below) |
-| **etcd** | 3 | Strongly-consistent KV (Raft) | Compare against Kafka on consensus + partition behavior | New |
+| **kafka-cluster** | 3 | Log-based messaging (KRaft) | Headline: replication, partition tolerance | Case study complete |
+| **etcd** | 3 | Strongly-consistent KV (Raft) | Compare against Kafka on consensus + partition behavior | Next |
 | **postgresql** | 2 | Relational DB w/ streaming replication | Async replication, write durability | New |
 | **nginx** | 1 | HTTP server | Smoke target only; **drop from thesis chapter** | Unchanged |
 
@@ -146,6 +146,33 @@ python3 -m topotestix.cli orchestrator run kafka-cluster --seed 2 --project-root
 ```
 
 If either build fails, fix the module/property before doing the 50-seed sweep. The first kafka-cluster build is the long pole (~5–10 min) — every subsequent run reuses the cache.
+
+### 1.4 Kafka empirical artifacts
+
+Kafka is now ready to use as the first thesis case study.
+
+Completed artifacts:
+
+```text
+experiments/kafka-cluster-case-study.md
+experiments/kafka-cluster-findings.md
+experiments/kafka-cluster-sweep-1-50-fixed-20260613.md
+experiments/kafka-cluster-sweep-1-50-fixed-20260613-summary.json
+experiments/kafka-cluster-sweep-1-50-fixed-20260613-summary.txt
+experiments/kafka-cluster-sweep-1-50-fixed-20260613.log
+experiments/kafka-cluster-shrink-seed-13.log                 # raw shrink attempt; exposes Kafka dotted-path limitation
+experiments/kafka-cluster-shrink-seed-9.log                  # class-preserving shrink summary
+experiments/kafka-cluster-min-message-max.nix                # validated minimized repro config
+experiments/kafka-cluster-min-log-segment.nix                # validated minimized repro config
+experiments/kafka-cluster-min-message-max-run.log
+experiments/kafka-cluster-min-log-segment-run.log
+```
+
+Thesis framing:
+
+> The Kafka experiment did not reveal Kafka implementation defects. It showed that TopoTestix can automatically surface production-relevant configuration/workload incompatibilities where Kafka starts and passes basic checks, but a large-message data-plane property fails.
+
+Next: move to `etcd-cluster` for a second real distributed-system case study.
 
 ## Phase 2 — New SUT: `etcd-cluster` (3-node Raft)
 

@@ -1,0 +1,52 @@
+# Kafka seed 9 class-preserving shrink summary
+
+Goal: preserve the `RecordBatchTooLargeException` / `log.segment.bytes` failure class.
+
+The generic shrinker is failure-preserving, not failure-class-preserving. For seed 9,
+unconstrained shrinking can reduce `message.max.bytes` until the failure collapses into
+the simpler `RecordTooLargeException` class. That would no longer represent the distinct
+log-segment interaction found in the 50-seed sweep.
+
+Therefore, seed 9 was minimized by constructing a class-isolating config target that:
+
+- keeps `message.max.bytes` high enough for the 1.5 MiB record,
+- keeps `replica.fetch.max.bytes` high enough for the 1.5 MiB record,
+- keeps `log.segment.bytes = 1048576`, below the 1.5 MiB record batch,
+- minimizes unrelated Kafka/resource settings to their first choice.
+
+Minimized config target:
+
+  experiments/kafka-cluster-min-log-segment.nix
+
+Validation command:
+
+  python3 -m topotestix.cli orchestrator run kafka-cluster \
+    --seed 1 \
+    --name kafka-cluster-min-log-segment \
+    --project-root . \
+    --config-target experiments/kafka-cluster-min-log-segment.nix
+
+Validation log:
+
+  experiments/kafka-cluster-min-log-segment-run.log
+
+Validated run dir:
+
+  .topotestix/runs/20260615-173157-kafka-cluster-seed-1-kafka-cluster-min-log-segment
+
+Observed result:
+
+  FAIL kafka-large-message-on-kafka1
+  PASS remaining 10 Kafka properties
+
+Observed exception:
+
+  org.apache.kafka.common.errors.RecordBatchTooLargeException:
+  The request included message batch larger than the configured segment size on the server.
+
+Note: an earlier attempt to use command-line choice overrides directly is preserved in:
+
+  experiments/kafka-cluster-shrink-seed-9-choice-override-limitation.log
+
+That attempt exposed a framework limitation: Kafka settings use quoted Nix attribute names
+containing dots, while TopoTestix choice paths also use dots as path separators.
