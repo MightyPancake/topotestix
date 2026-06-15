@@ -1,0 +1,85 @@
+category counts
+19 log-segment-too-small
+18 broker-message-max-too-small
+13 pass
+
+by (messageMax, logSegmentBytes, category)
+11 (1048576, 1048576, 'broker-message-max-too-small')
+11 (2097152, 1048576, 'log-segment-too-small')
+8 (2097152, 16777216, 'pass')
+8 (4194304, 1048576, 'log-segment-too-small')
+7 (1048576, 16777216, 'broker-message-max-too-small')
+5 (4194304, 16777216, 'pass')
+
+by (messageMax, replicaFetchMax, logSegmentBytes, category)
+5 (1048576, 4194304, 1048576, 'broker-message-max-too-small')
+4 (2097152, 2097152, 16777216, 'pass')
+4 (2097152, 1048576, 1048576, 'log-segment-too-small')
+4 (2097152, 2097152, 1048576, 'log-segment-too-small')
+3 (4194304, 1048576, 1048576, 'log-segment-too-small')
+3 (1048576, 2097152, 1048576, 'broker-message-max-too-small')
+3 (4194304, 4194304, 1048576, 'log-segment-too-small')
+3 (1048576, 1048576, 1048576, 'broker-message-max-too-small')
+3 (1048576, 1048576, 16777216, 'broker-message-max-too-small')
+3 (2097152, 4194304, 1048576, 'log-segment-too-small')
+3 (4194304, 2097152, 16777216, 'pass')
+2 (1048576, 2097152, 16777216, 'broker-message-max-too-small')
+2 (1048576, 4194304, 16777216, 'broker-message-max-too-small')
+2 (2097152, 1048576, 16777216, 'pass')
+2 (4194304, 2097152, 1048576, 'log-segment-too-small')
+2 (2097152, 4194304, 16777216, 'pass')
+1 (4194304, 1048576, 16777216, 'pass')
+1 (4194304, 4194304, 16777216, 'pass')
+
+CSV
+seed,status,category,messageMax,replicaFetchMax,logSegmentBytes,heap,memory,rf,minIsr
+1,fail,broker-message-max-too-small,1048576,2097152,16777216,-Xms256m+-Xmx512m,2048,3,1
+2,pass,pass,4194304,1048576,16777216,-Xms256m+-Xmx512m,4096,3,1
+3,pass,pass,2097152,2097152,16777216,-Xms512m+-Xmx1024m,2048,3,2
+4,fail,log-segment-too-small,4194304,1048576,1048576,-Xms1024m+-Xmx1536m,2048,1,2
+5,fail,broker-message-max-too-small,1048576,2097152,1048576,-Xms256m+-Xmx512m,2048,1,2
+6,pass,pass,2097152,2097152,16777216,-Xms512m+-Xmx1024m,2048,1,2
+7,fail,log-segment-too-small,2097152,1048576,1048576,-Xms1024m+-Xmx1536m,4096,1,1
+8,fail,log-segment-too-small,2097152,1048576,1048576,-Xms1024m+-Xmx1536m,4096,3,2
+9,fail,log-segment-too-small,4194304,4194304,1048576,-Xms256m+-Xmx512m,3072,3,2
+10,fail,log-segment-too-small,2097152,1048576,1048576,-Xms256m+-Xmx512m,4096,3,1
+11,fail,broker-message-max-too-small,1048576,1048576,1048576,-Xms512m+-Xmx1024m,2048,1,2
+12,fail,broker-message-max-too-small,1048576,2097152,1048576,-Xms256m+-Xmx512m,3072,1,2
+13,fail,broker-message-max-too-small,1048576,2097152,1048576,-Xms512m+-Xmx1024m,3072,3,1
+14,fail,broker-message-max-too-small,1048576,4194304,16777216,-Xms256m+-Xmx512m,2048,1,1
+15,fail,log-segment-too-small,2097152,1048576,1048576,-Xms256m+-Xmx512m,4096,3,1
+16,fail,broker-message-max-too-small,1048576,1048576,16777216,-Xms256m+-Xmx512m,3072,3,1
+17,fail,log-segment-too-small,2097152,4194304,1048576,-Xms256m+-Xmx512m,3072,3,1
+18,fail,log-segment-too-small,2097152,4194304,1048576,-Xms256m+-Xmx512m,4096,3,2
+19,fail,log-segment-too-small,2097152,4194304,1048576,-Xms256m+-Xmx512m,2048,3,1
+20,fail,broker-message-max-too-small,1048576,4194304,1048576,-Xms1024m+-Xmx1536m,2048,3,2
+21,pass,pass,2097152,1048576,16777216,-Xms512m+-Xmx1024m,3072,1,2
+22,fail,log-segment-too-small,4194304,1048576,1048576,-Xms1024m+-Xmx1536m,3072,3,2
+23,fail,broker-message-max-too-small,1048576,4194304,16777216,-Xms1024m+-Xmx1536m,4096,1,1
+24,pass,pass,2097152,2097152,16777216,-Xms1024m+-Xmx1536m,4096,1,2
+25,pass,pass,2097152,2097152,16777216,-Xms512m+-Xmx1024m,2048,1,2
+26,pass,pass,4194304,4194304,16777216,-Xms1024m+-Xmx1536m,3072,3,2
+27,pass,pass,4194304,2097152,16777216,-Xms512m+-Xmx1024m,3072,1,1
+28,fail,log-segment-too-small,4194304,2097152,1048576,-Xms1024m+-Xmx1536m,2048,3,1
+29,pass,pass,4194304,2097152,16777216,-Xms256m+-Xmx512m,4096,3,2
+30,pass,pass,2097152,1048576,16777216,-Xms1024m+-Xmx1536m,2048,3,2
+31,fail,broker-message-max-too-small,1048576,4194304,1048576,-Xms1024m+-Xmx1536m,4096,1,1
+32,fail,log-segment-too-small,2097152,2097152,1048576,-Xms1024m+-Xmx1536m,2048,3,2
+33,fail,broker-message-max-too-small,1048576,4194304,1048576,-Xms256m+-Xmx512m,2048,1,1
+34,fail,log-segment-too-small,2097152,2097152,1048576,-Xms256m+-Xmx512m,2048,3,1
+35,fail,broker-message-max-too-small,1048576,1048576,16777216,-Xms1024m+-Xmx1536m,4096,1,1
+36,fail,broker-message-max-too-small,1048576,2097152,16777216,-Xms512m+-Xmx1024m,4096,1,1
+37,fail,log-segment-too-small,4194304,4194304,1048576,-Xms1024m+-Xmx1536m,4096,3,1
+38,pass,pass,2097152,4194304,16777216,-Xms256m+-Xmx512m,2048,3,2
+39,pass,pass,4194304,2097152,16777216,-Xms512m+-Xmx1024m,3072,3,2
+40,fail,broker-message-max-too-small,1048576,4194304,1048576,-Xms256m+-Xmx512m,2048,1,2
+41,fail,log-segment-too-small,4194304,1048576,1048576,-Xms1024m+-Xmx1536m,2048,1,1
+42,pass,pass,2097152,4194304,16777216,-Xms1024m+-Xmx1536m,2048,3,1
+43,fail,broker-message-max-too-small,1048576,1048576,1048576,-Xms512m+-Xmx1024m,4096,1,1
+44,fail,broker-message-max-too-small,1048576,4194304,1048576,-Xms1024m+-Xmx1536m,4096,1,1
+45,fail,log-segment-too-small,4194304,4194304,1048576,-Xms512m+-Xmx1024m,3072,3,2
+46,fail,broker-message-max-too-small,1048576,1048576,1048576,-Xms512m+-Xmx1024m,4096,1,2
+47,fail,log-segment-too-small,2097152,2097152,1048576,-Xms512m+-Xmx1024m,2048,1,2
+48,fail,log-segment-too-small,4194304,2097152,1048576,-Xms1024m+-Xmx1536m,3072,1,2
+49,fail,broker-message-max-too-small,1048576,1048576,16777216,-Xms512m+-Xmx1024m,4096,1,1
+50,fail,log-segment-too-small,2097152,2097152,1048576,-Xms256m+-Xmx512m,4096,1,2
