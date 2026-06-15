@@ -61,15 +61,7 @@ machine.copy_from_machine("/tmp/report.json")
 
 The report lands at `$out/report.json` (accessible as `result/report.json` after `nix build`).
 
-After writing the report, if any property failed:
-
-```python
-if not _all_passed:
-    failed_names = ", ".join(r["name"] for r in _report if r["status"] == "failed")
-    raise AssertionError(f"Failed properties: {failed_names}")
-```
-
-This makes the test derivation fail (non-zero exit), while the report.json is still available in the output.
+Property failures do **not** make the NixOS test derivation fail after the report is copied out. Instead, TopoTestix parses `report.json` and marks the run failed if any entry has `"status": "failed"`. This preserves structured failure data for shrinking and thesis sweep analysis. Infrastructure failures outside `_check()` still fail the derivation and may produce no report.
 
 ### `reportNode` parameter
 
@@ -157,10 +149,6 @@ _check("nginx-responds-to-http", check_nginx_responds, machine)
 encoded = base64.b64encode(json.dumps(_report).encode()).decode()
 machine.succeed(f"echo '{encoded}' | base64 -d > /tmp/report.json")
 machine.copy_from_machine("/tmp/report.json")
-
-if not _all_passed:
-    failed_names = ", ".join(r["name"] for r in _report if r["status"] == "failed")
-    raise AssertionError(f"Failed properties: {failed_names}")
 ```
 
 ## Design decisions
@@ -169,6 +157,7 @@ if not _all_passed:
 |---|---|---|
 | `_check()` catches exceptions, does NOT re-raise | Test continues after property failures | All properties always get evaluated; report captures everything |
 | No `try/finally` wrapper around user testScript | If bare `succeed()` fails before report, no report.json (test still fails) | Keeping it simple; `try/finally` can be added later |
+| Property failures do not raise after report copy | Nix derivation succeeds, TopoTestix marks run failed from `report.json` | Preserves structured failure data for shrinking and thesis analysis |
 | `composedProps.check` auto-appended | Runner appends checks after the user script | Explicit checkpoints are future work |
 | Report via `copy_from_machine` | report.json lands in `$out/report.json` | More reliable than stdout parsing; replaces deprecated `copy_from_vm` |
 | JSON via base64 encoding | Avoids shell escaping issues in `machine.succeed()` | JSON contains quotes, newlines, etc. |

@@ -91,8 +91,8 @@ in
     expected = true;
   };
 
-  testComposeTestScriptContainsAssertion = {
-    expr = lib.hasInfix "AssertionError" simpleResult;
+  testComposeTestScriptDoesNotRaiseOnPropertyFailure = {
+    expr = !(lib.hasInfix "AssertionError" simpleResult);
     expected = true;
   };
 

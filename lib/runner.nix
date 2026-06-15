@@ -16,7 +16,8 @@
 #   - All properties are always evaluated; failing properties are logged
 #   - Report written to /tmp/report.json in VM, copied out via copy_from_machine
 #   - JSON base64-encoded to avoid shell escaping issues
-#   - After report writing, raises AssertionError if any property failed
+#   - Property failures do not fail the NixOS VM derivation; TopoTestix marks
+#     the run failed from report.json so structured failure data is preserved.
 #
 # See docs/runner.md for full design.
 
@@ -46,10 +47,6 @@ let
     encoded = base64.b64encode(json.dumps(_report).encode()).decode()
     ${reportNode}.succeed("echo " + "'" + encoded + "'" + " | base64 -d > /tmp/report.json")
     ${reportNode}.copy_from_machine("/tmp/report.json")
-
-    if not _all_passed:
-        failed_names = ", ".join(r["name"] for r in _report if r["status"] == "failed")
-        raise AssertionError(f"Failed properties: {failed_names}")
   '';
 
   composeTestScript = { testScript, properties, reportNode }:
