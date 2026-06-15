@@ -76,6 +76,11 @@ def build_parser() -> argparse.ArgumentParser:
     sweep.add_argument("target")
     sweep.add_argument("--seeds", required=True, help="Seed range like 1..100 or comma list")
     sweep.add_argument("--fail-fast", action="store_true")
+    sweep.add_argument(
+        "--resume",
+        action="store_true",
+        help="Skip seeds that already have a run in the run store (passed or failed). Delete the run dir to force a re-run.",
+    )
     add_run_common(sweep)
     add_common_target_overrides(sweep)
 

@@ -262,12 +262,67 @@ def run_once_events(*args, **kwargs) -> Iterator[Event]:
     yield event("run_passed" if passed else "run_failed", f"Run {'passed' if passed else 'failed'}", runDir=run_dir)
 
 
-def sweep_events(project_root: str, target: Target, seeds: list[int], name: Optional[str] = None, runs_dir: Optional[str] = None, fail_fast: bool = False) -> Iterator[Event]:
+def find_existing_seeds(store: RunStore, target: Target, seeds: list[int]) -> set[int]:
+    """Return the subset of `seeds` that already have a run.json for this target.
+
+    Used by `sweep --resume` to skip seeds that have already been run (passed
+    OR failed). To force a re-run, delete the corresponding run dir first.
+    """
+    seed_set = set(seeds)
+    existing: set[int] = set()
+    for meta in store.list_runs():
+        if meta.get("target") != target.name:
+            continue
+        seed = meta.get("seed")
+        if isinstance(seed, int) and seed in seed_set:
+            existing.add(seed)
+    return existing
+
+
+def sweep_events(
+    project_root: str,
+    target: Target,
+    seeds: list[int],
+    name: Optional[str] = None,
+    runs_dir: Optional[str] = None,
+    fail_fast: bool = False,
+    resume: bool = False,
+) -> Iterator[Event]:
     failures = 0
-    yield event("sweep_started", f"Running {len(seeds)} seeds", target=target.name, total=len(seeds))
+    skipped = 0
+    yield event(
+        "sweep_started",
+        f"Running {len(seeds)} seeds",
+        target=target.name,
+        total=len(seeds),
+        resume=resume,
+    )
+    store = None
+    existing: set[int] = set()
+    if resume:
+        store = RunStore(runs_dir or default_runs_dir(project_root))
+        existing = find_existing_seeds(store, target, seeds)
     for index, seed in enumerate(seeds, start=1):
+        if seed in existing:
+            skipped += 1
+            yield event(
+                "run_skipped",
+                f"[{index}/{len(seeds)}] {target.name} seed={seed} (already in run store)",
+                target=target.name,
+                seed=seed,
+                index=index,
+                total=len(seeds),
+            )
+            continue
         run_name = name or f"{target.name}-seed-{seed}"
-        yield event("run_started", f"[{index}/{len(seeds)}] {target.name} seed={seed}", target=target.name, seed=seed, index=index, total=len(seeds))
+        yield event(
+            "run_started",
+            f"[{index}/{len(seeds)}] {target.name} seed={seed}",
+            target=target.name,
+            seed=seed,
+            index=index,
+            total=len(seeds),
+        )
         passed, report, run_dir, result = run_once(project_root, target, seed, run_name, runs_dir)
         if not passed:
             failures += 1
@@ -283,7 +338,14 @@ def sweep_events(project_root: str, target: Target, seeds: list[int], name: Opti
         )
         if failures and fail_fast:
             break
-    yield event("sweep_finished", "Sweep finished", total=len(seeds), failures=failures)
+    yield event(
+        "sweep_finished",
+        "Sweep finished",
+        target=target.name,
+        total=len(seeds),
+        skipped=skipped,
+        failures=failures,
+    )
 
 
 def reproduce_command(project_root: str, target: Target, seed: int, name: str, topology_choices: dict, config_choices: dict) -> str:
@@ -485,15 +547,58 @@ def parse_seed_range(value: str) -> list[int]:
 def cmd_sweep(args, project_root: str) -> int:
     target = get_cli_target(project_root, args)
     seeds = parse_seed_range(args.seeds)
+    json_mode = bool(getattr(args, "json", False))
+    quiet = bool(getattr(args, "quiet", False))
     failures = 0
-    for item in sweep_events(project_root, target, seeds, args.name, args.output_dir, args.fail_fast):
+    completed = 0
+    skipped = 0
+    failed_runs: list[dict] = []
+    for item in sweep_events(
+        project_root,
+        target,
+        seeds,
+        args.name,
+        args.output_dir,
+        args.fail_fast,
+        getattr(args, "resume", False),
+    ):
         if item.type == "run_started":
-            print(item.message)
+            if not json_mode and not quiet:
+                print(item.message)
+        elif item.type == "run_skipped":
+            skipped += 1
+            if not json_mode and not quiet:
+                print(f"  SKIP seed={item.data['seed']} (already in run store)")
         elif item.type in {"run_passed", "run_failed"}:
-            print(f"  {item.message} {item.data['runDir']}")
             failures = item.data["failures"]
+            completed += 1
+            if not json_mode and not quiet:
+                print(f"  {item.message} {item.data['runDir']}")
+            if item.type == "run_failed":
+                failed_runs.append(
+                    {
+                        "seed": item.data["seed"],
+                        "runDir": item.data["runDir"],
+                        "returncode": item.data.get("returncode"),
+                    }
+                )
         elif item.type == "sweep_finished":
-            print(f"Completed {item.data['total']} planned runs; failures={item.data['failures']}")
+            total = item.data["total"]
+            if json_mode:
+                summary = {
+                    "target": target.name,
+                    "total": total,
+                    "completed": completed,
+                    "skipped": skipped,
+                    "failed": failures,
+                    "failures": failed_runs,
+                }
+                print(json.dumps(summary, indent=2, sort_keys=True))
+            elif not quiet:
+                print(
+                    f"Completed {total} planned runs; "
+                    f"completed={completed} skipped={skipped} failures={failures}"
+                )
     return 1 if failures else 0
 
 
