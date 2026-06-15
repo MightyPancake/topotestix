@@ -4,3 +4,10 @@
 # target/
 result
 eval-store
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Local TopoTestix run store
+.topotestix/
