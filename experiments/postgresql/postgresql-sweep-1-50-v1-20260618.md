@@ -13,7 +13,7 @@ nix-shell -p python3 python3Packages.textual --run \
 
 Raw log:
 
-- `experiments/postgresql-sweep-1-50-v1-20260618-175119.log`
+- `experiments/postgresql/postgresql-sweep-1-50-v1-20260618-175119.log`
 
 ## Result
 
@@ -37,3 +37,5 @@ Summary:
 ## Interpretation
 
 The PostgreSQL v1 primary/standby target is green across the first 50 seeds. The current v1 fuzz surface avoids known hot-standby-sensitive GUCs that require standby values to be at least primary values.
+
+The configuration compatibility constraint found during bring-up is documented in [`postgresql-v1-findings.md`](postgresql-v1-findings.md).

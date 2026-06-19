@@ -66,7 +66,7 @@ max_prepared_transactions
 max_locks_per_transaction
 ```
 
-During bring-up, `max_connections` and `max_wal_senders` were tried and removed because they produced expected standby startup failures when the standby value was lower than the primary.
+During bring-up, `max_connections` and `max_wal_senders` were tried and removed because they produced expected standby startup failures when the standby value was lower than the primary. Detailed evidence is recorded in [`postgresql-v1-findings.md`](postgresql-v1-findings.md).
 
 ## v1 properties
 
