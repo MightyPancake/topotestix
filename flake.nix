@@ -29,7 +29,6 @@
           src = self;
           pyproject = true;
           build-system = [ pkgs.python3Packages.setuptools ];
-          dependencies = [ pkgs.python3Packages.textual ];
           doCheck = false;
         };
       };
@@ -48,7 +47,7 @@
         '';
 
         python = pkgs.runCommand "python-tests" {
-          nativeBuildInputs = [ pkgs.python3 pkgs.python3Packages.textual ];
+          nativeBuildInputs = [ pkgs.python3 ];
         } ''
           cp -r ${self} source
           chmod -R u+w source
@@ -62,7 +61,6 @@
         packages = with pkgs; [
           nix-unit.packages.${system}.default
           python3
-          python3Packages.textual
           python3Packages.black
           ruff
         ];

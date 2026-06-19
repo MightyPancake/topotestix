@@ -7,7 +7,7 @@ name = "topotestix"
 version = "0.1.0"
 description = "Environment-aware property-based testing for distributed systems"
 requires-python = ">=3.9"
-dependencies = ["textual"]
+dependencies = []
 
 [project.scripts]
 topotestix = "topotestix.cli:main"

@@ -14,7 +14,6 @@ from .orchestrator import (
 from .run_store import RunStore, default_runs_dir
 from .runner import cmd_compose_script, cmd_inspect_report, cmd_show_properties
 from .targets import print_target, print_targets, project_root_from_args
-from .tui import cmd_tui
 
 
 def add_common_target_overrides(parser: argparse.ArgumentParser) -> None:
@@ -55,8 +54,16 @@ def build_parser() -> argparse.ArgumentParser:
     run = orch_sub.add_parser("run", help="Run one seed")
     run.add_argument("target")
     run.add_argument("--seed", type=int, default=1)
-    run.add_argument("--topology-choices", type=lambda value: parse_json_object(value, "--topology-choices"), default={})
-    run.add_argument("--config-choices", type=lambda value: parse_json_object(value, "--config-choices"), default={})
+    run.add_argument(
+        "--topology-choices",
+        type=lambda value: parse_json_object(value, "--topology-choices"),
+        default={},
+    )
+    run.add_argument(
+        "--config-choices",
+        type=lambda value: parse_json_object(value, "--config-choices"),
+        default={},
+    )
     add_run_common(run)
     add_common_target_overrides(run)
 
@@ -118,14 +125,6 @@ def build_parser() -> argparse.ArgumentParser:
     runs_report.add_argument("--project-root", default=argparse.SUPPRESS)
     runs_report.add_argument("--output-dir", default=None)
 
-    tui = subparsers.add_parser("tui", help="Run the Textual TUI")
-    tui.add_argument("target")
-    tui.add_argument("--seeds", default="1")
-    tui.add_argument("--project-root", default=argparse.SUPPRESS)
-    tui.add_argument("--output-dir", default=None)
-    tui.add_argument("--name", default=None)
-    add_common_target_overrides(tui)
-
     return parser
 
 
@@ -141,7 +140,9 @@ def cmd_runs(args, project_root: str) -> int:
             print(json.dumps(runs, indent=2, sort_keys=True))
         else:
             for run in runs:
-                print(f"{run['id']}\t{run.get('status')}\t{run.get('target')}\tseed={run.get('seed')}")
+                print(
+                    f"{run['id']}\t{run.get('status')}\t{run.get('target')}\tseed={run.get('seed')}"
+                )
         return 0
     run_dir = store.resolve_run(args.run_id)
     if args.runs_command == "show":
@@ -186,8 +187,6 @@ def main(argv: Optional[list[str]] = None) -> int:
                 return cmd_show_properties(args, project_root)
         if args.command == "runs":
             return cmd_runs(args, project_root)
-        if args.command == "tui":
-            return cmd_tui(args, project_root)
     except (RuntimeError, ValueError, FileNotFoundError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
