@@ -24,15 +24,17 @@ class RunStore:
 
     def create_run(self, target: str, seed: int, name: str) -> dict[str, str]:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-        run_id = safe_name(f"{timestamp}-{target}-seed-{seed}-{name}")
-        run_dir = os.path.join(self.root, run_id)
-        suffix = 1
-        while os.path.exists(run_dir):
-            suffix += 1
-            run_id = safe_name(f"{timestamp}-{target}-seed-{seed}-{name}-{suffix}")
+        base_id = safe_name(f"{timestamp}-{target}-seed-{seed}-{name}")
+        suffix = 0
+        while True:
+            run_id = base_id if suffix == 0 else f"{base_id}-{suffix}"
             run_dir = os.path.join(self.root, run_id)
-        os.makedirs(run_dir)
-        return {"id": run_id, "dir": run_dir}
+            try:
+                # Atomic create: fails if another process/thread made it first.
+                os.makedirs(run_dir, exist_ok=False)
+                return {"id": run_id, "dir": run_dir}
+            except FileExistsError:
+                suffix += 1
 
     def write_json(self, run_dir: str, filename: str, value: Any) -> None:
         with open(os.path.join(run_dir, filename), "w") as f:

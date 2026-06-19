@@ -88,6 +88,14 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip seeds that already have a run in the run store (passed or failed). Delete the run dir to force a re-run.",
     )
+    sweep.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="Number of seeds to run in parallel (default 1). Note: each seed builds a "
+        "NixOS test that boots QEMU VM(s); jobs × nodes-per-cluster VMs may run at once. "
+        "Tune to host RAM and Nix max-jobs.",
+    )
     add_run_common(sweep)
     add_common_target_overrides(sweep)
 

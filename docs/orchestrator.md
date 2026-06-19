@@ -247,10 +247,28 @@ Two shrinking approaches, by priority:
 
 - Selective property inclusion via `--property-name` CLI flag
 - Value-aware shrinking — use NixOS defaults as baseline, weight toward error-prone configs
-- Multi-seed execution / parallel builds (Phase 7)
+- Speculative parallel shrinking (the greedy shrinking loop stays sequential; parallel seed execution is implemented via `sweep --jobs N`)
 - Failure-reproducing flake output
 - Runner as HTTP service
 - TUI monitoring and attach mode
+
+## Sweep and parallel execution
+
+`orchestrator sweep` runs a range of seeds (`--seeds 1..50` or `1,3,7`) sequentially by default. `--jobs N` runs up to `N` seeds concurrently in worker threads (each `run_once` blocks on a `nix build` subprocess, so the GIL is released).
+
+```bash
+# Sequential (default)
+python3 -m topotestix.cli orchestrator sweep kafka-cluster --seeds 1..50 --project-root .
+
+# Parallel
+python3 -m topotestix.cli orchestrator sweep kafka-cluster --seeds 1..50 --jobs 3 --project-root .
+```
+
+- **Resource caveat:** each seed builds a NixOS test that boots QEMU VM(s). `jobs × nodes-per-cluster` VMs may run at once. Tune `--jobs` to host RAM and Nix `max-jobs` to avoid OOM or builder contention. Default is `1` (opt-in parallelism).
+- **Output order:** with `--jobs > 1`, run lines are emitted in **completion order**; the `[i/total (seed=N)]` label uses the completion count for executed runs (and the seed-list position for `--resume` skips). With `--jobs 1` seed order is preserved.
+- **Timing:** every run reports an elapsed time `(Xs)`; the sweep summary prints `total <wall-clock>s avg <mean-per-run>s`. In `--json` mode the summary includes `totalTime`, `avgRunTime`, and `jobs`, and each failure entry carries `elapsed`. Under parallelism `sum(elapsed)` may exceed `totalTime` (runs overlap); `avgRunTime` is the mean per-run *duration*, `totalTime` is sweep *wall clock*.
+- **`--fail-fast`:** on the first failure, no further seeds are submitted; in-flight runs finish, queued futures are cancelled.
+- **Shrinking stays sequential:** the greedy `orchestrator shrink` loop depends on each step's result, so it is not parallelized.
 
 ## Example of use:
 

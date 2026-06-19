@@ -4,6 +4,9 @@ import os
 import shlex
 import shutil
 import sys
+import threading
+import time
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from typing import Iterator, Optional
 
 from .events import Event, event
@@ -67,7 +70,9 @@ orchestrate {{
 }}"""
 
 
-def generate_shrink_inputs_expr(seed: int, topology_target_path: str, config_target_path: str, project_root: str) -> str:
+def generate_shrink_inputs_expr(
+    seed: int, topology_target_path: str, config_target_path: str, project_root: str
+) -> str:
     abs_topology_target = resolve_path(topology_target_path, project_root)
     abs_config_target = resolve_path(config_target_path, project_root)
     abs_fuzzer = resolve_path("lib/fuzzer.nix", project_root)
@@ -118,7 +123,9 @@ fuzzer {{
 }}"""
 
 
-def generate_inspect_expr(seed: int, topology_target_path: str, config_target_path: str, project_root: str) -> str:
+def generate_inspect_expr(
+    seed: int, topology_target_path: str, config_target_path: str, project_root: str
+) -> str:
     abs_topology_target = resolve_path(topology_target_path, project_root)
     abs_config_target = resolve_path(config_target_path, project_root)
     abs_fuzzer = resolve_path("lib/fuzzer.nix", project_root)
@@ -164,7 +171,9 @@ in
 
 
 def inspect_seed(project_root: str, target: Target, seed: int) -> dict:
-    return eval_json(generate_inspect_expr(seed, target.topology_target, target.config_target, project_root))
+    return eval_json(
+        generate_inspect_expr(seed, target.topology_target, target.config_target, project_root)
+    )
 
 
 def target_name(args) -> str:
@@ -240,7 +249,9 @@ def run_once(
         "runDir": run_dir,
         "resultPath": result_link,
         "summary": report_summary(report),
-        "reproduceCommand": reproduce_command(project_root, target, seed, name, topology_choices or {}, config_choices or {}),
+        "reproduceCommand": reproduce_command(
+            project_root, target, seed, name, topology_choices or {}, config_choices or {}
+        ),
     }
     store.write_json(run_dir, "run.json", meta)
     return passed, report, run_dir, result
@@ -253,13 +264,21 @@ def run_once_events(*args, **kwargs) -> Iterator[Event]:
         raise ValueError("run_once_events requires target and seed")
     yield event("run_started", f"Running {target.name} seed={seed}", target=target.name, seed=seed)
     passed, report, run_dir, result = run_once(*args, **kwargs)
-    yield event("build_finished", "Nix build finished", returncode=result.returncode, runDir=run_dir)
+    yield event(
+        "build_finished", "Nix build finished", returncode=result.returncode, runDir=run_dir
+    )
     for entry in report:
         status = entry.get("status", "unknown")
         data = dict(entry)
         data.pop("message", None)
-        yield event(f"property_{status}", entry.get("message") or entry.get("name", "unnamed"), **data)
-    yield event("run_passed" if passed else "run_failed", f"Run {'passed' if passed else 'failed'}", runDir=run_dir)
+        yield event(
+            f"property_{status}", entry.get("message") or entry.get("name", "unnamed"), **data
+        )
+    yield event(
+        "run_passed" if passed else "run_failed",
+        f"Run {'passed' if passed else 'failed'}",
+        runDir=run_dir,
+    )
 
 
 def find_existing_seeds(store: RunStore, target: Target, seeds: list[int]) -> set[int]:
@@ -287,68 +306,217 @@ def sweep_events(
     runs_dir: Optional[str] = None,
     fail_fast: bool = False,
     resume: bool = False,
+    jobs: int = 1,
 ) -> Iterator[Event]:
+    """Drive a sweep over `seeds`.
+
+    With ``jobs <= 1`` runs are executed sequentially in seed order. With
+    ``jobs > 1`` up to ``jobs`` seeds run concurrently in worker threads (each
+    ``run_once`` blocks on a ``nix build`` subprocess, so the GIL is released).
+    Run events are emitted in completion order when parallel; ``[i/total]``
+    uses the completion count for executed runs and the seed-list position for
+    skipped seeds. Per-run elapsed time (monotonic) is attached to every
+    ``run_passed``/``run_failed`` event, and ``sweep_finished`` carries
+    ``totalTime`` (wall clock) and ``avgRunTime`` (mean per-run duration).
+    """
+    sweep_t0 = time.monotonic()
     failures = 0
     skipped = 0
-    yield event(
-        "sweep_started",
-        f"Running {len(seeds)} seeds",
-        target=target.name,
-        total=len(seeds),
-        resume=resume,
-    )
+    sum_elapsed = 0.0
+    completed = 0
+    total = len(seeds)
+
     store = None
     existing: set[int] = set()
     if resume:
         store = RunStore(runs_dir or default_runs_dir(project_root))
         existing = find_existing_seeds(store, target, seeds)
-    for index, seed in enumerate(seeds, start=1):
-        if seed in existing:
-            skipped += 1
+
+    yield event(
+        "sweep_started",
+        f"Running {total} seeds",
+        target=target.name,
+        total=total,
+        resume=resume,
+        jobs=jobs,
+    )
+
+    if jobs <= 1:
+        # Sequential path: preserves seed order and the generator contract.
+        for index, seed in enumerate(seeds, start=1):
+            if seed in existing:
+                skipped += 1
+                yield event(
+                    "run_skipped",
+                    f"[{index}/{total} (seed={seed})] {target.name} (already in run store)",
+                    target=target.name,
+                    seed=seed,
+                    index=index,
+                    total=total,
+                )
+                continue
+            run_name = name or f"{target.name}-seed-{seed}"
             yield event(
-                "run_skipped",
-                f"[{index}/{len(seeds)}] {target.name} seed={seed} (already in run store)",
+                "run_started",
+                f"[{index}/{total} (seed={seed})] {target.name}",
                 target=target.name,
                 seed=seed,
                 index=index,
-                total=len(seeds),
+                total=total,
             )
-            continue
-        run_name = name or f"{target.name}-seed-{seed}"
-        yield event(
-            "run_started",
-            f"[{index}/{len(seeds)}] {target.name} seed={seed}",
-            target=target.name,
-            seed=seed,
-            index=index,
-            total=len(seeds),
-        )
-        passed, report, run_dir, result = run_once(project_root, target, seed, run_name, runs_dir)
-        if not passed:
-            failures += 1
-        yield event(
-            "run_passed" if passed else "run_failed",
-            f"{'PASS' if passed else 'FAIL'} seed={seed}",
-            target=target.name,
-            seed=seed,
-            runDir=run_dir,
-            returncode=result.returncode,
-            report=report,
-            failures=failures,
-        )
-        if failures and fail_fast:
-            break
+            t0 = time.monotonic()
+            passed, report, run_dir, result = run_once(
+                project_root, target, seed, run_name, runs_dir
+            )
+            elapsed = time.monotonic() - t0
+            sum_elapsed += elapsed
+            completed += 1
+            if not passed:
+                failures += 1
+            yield event(
+                "run_passed" if passed else "run_failed",
+                f"{'PASS' if passed else 'FAIL'} [{index}/{total} (seed={seed})] ({elapsed:.1f}s)",
+                target=target.name,
+                seed=seed,
+                runDir=run_dir,
+                returncode=result.returncode,
+                report=report,
+                failures=failures,
+                elapsed=elapsed,
+            )
+            if failures and fail_fast:
+                break
+    else:
+        # Parallel path: submit non-skipped seeds to a thread pool, emit
+        # events in completion order. ``i`` in run events is the completion
+        # count (incremented under the lock); skipped seeds keep their
+        # seed-list position.
+        pending: list[tuple[int, int]] = []  # (seed_list_index, seed)
+        for index, seed in enumerate(seeds, start=1):
+            if seed in existing:
+                skipped += 1
+                yield event(
+                    "run_skipped",
+                    f"[{index}/{total} (seed={seed})] {target.name} (already in run store)",
+                    target=target.name,
+                    seed=seed,
+                    index=index,
+                    total=total,
+                )
+            else:
+                pending.append((index, seed))
+
+        state_lock = threading.Lock()
+        stop_submitting = False
+        in_flight: dict[Future, tuple[int, int, str]] = {}
+
+        def _run_seed(seed: int, run_name: str) -> tuple[bool, list[dict], str, object, float]:
+            t0 = time.monotonic()
+            passed, report, run_dir, result = run_once(
+                project_root, target, seed, run_name, runs_dir
+            )
+            return passed, report, run_dir, result, time.monotonic() - t0
+
+        with ThreadPoolExecutor(max_workers=jobs) as executor:
+            # Prime the pool with up to `jobs` seeds, then refill as they complete.
+            futures_iter = iter(pending)
+            for _ in range(min(jobs, len(pending))):
+                index, seed = next(futures_iter)
+                run_name = name or f"{target.name}-seed-{seed}"
+                yield event(
+                    "run_started",
+                    f"[{index}/{total} (seed={seed})] {target.name}",
+                    target=target.name,
+                    seed=seed,
+                    index=index,
+                    total=total,
+                )
+                fut = executor.submit(_run_seed, seed, run_name)
+                in_flight[fut] = (index, seed, run_name)
+
+            while in_flight:
+                # wait(FIRST_COMPLETED) observes the *current* in_flight set,
+                # so newly submitted futures are visible on the next iteration
+                # (unlike as_completed(snapshot), which could hide a fast
+                # failure and allow extra submissions).
+                done, _ = wait(list(in_flight), return_when=FIRST_COMPLETED)
+                for fut in done:
+                    index, seed, run_name = in_flight.pop(fut)
+                    # Cancelled futures (never started) produce no run dir and
+                    # must not be counted. Running futures can't be cancelled
+                    # and complete normally; their results are emitted below.
+                    if fut.cancelled():
+                        continue
+                    passed, report, run_dir, result, elapsed = fut.result()
+                    with state_lock:
+                        completed += 1
+                        sum_elapsed += elapsed
+                        if not passed:
+                            failures += 1
+                        done_idx = completed
+                        cur_failures = failures
+                    status_label = "PASS" if passed else "FAIL"
+                    yield event(
+                        "run_passed" if passed else "run_failed",
+                        f"{status_label} [{done_idx}/{total} (seed={seed})] ({elapsed:.1f}s)",
+                        target=target.name,
+                        seed=seed,
+                        runDir=run_dir,
+                        returncode=result.returncode,
+                        report=report,
+                        failures=cur_failures,
+                        elapsed=elapsed,
+                    )
+                    if fail_fast and cur_failures:
+                        stop_submitting = True
+                if stop_submitting:
+                    # Stop refilling, but keep draining in-flight (running)
+                    # futures so their results are counted and emitted.
+                    # Cancel anything not yet started; running ones finish.
+                    for f in list(in_flight):
+                        f.cancel()
+                    continue
+                # Refill: one new submission per completed slot in this batch.
+                for _ in done:
+                    try:
+                        next_index, next_seed = next(futures_iter)
+                        next_name = name or f"{target.name}-seed-{next_seed}"
+                        yield event(
+                            "run_started",
+                            f"[{next_index}/{total} (seed={next_seed})] {target.name}",
+                            target=target.name,
+                            seed=next_seed,
+                            index=next_index,
+                            total=total,
+                        )
+                        next_fut = executor.submit(_run_seed, next_seed, next_name)
+                        in_flight[next_fut] = (next_index, next_seed, next_name)
+                    except StopIteration:
+                        break
+
+    sweep_total = time.monotonic() - sweep_t0
+    avg_run_time = (sum_elapsed / completed) if completed else 0.0
     yield event(
         "sweep_finished",
         "Sweep finished",
         target=target.name,
-        total=len(seeds),
+        total=total,
         skipped=skipped,
         failures=failures,
+        completed=completed,
+        totalTime=sweep_total,
+        avgRunTime=avg_run_time,
     )
 
 
-def reproduce_command(project_root: str, target: Target, seed: int, name: str, topology_choices: dict, config_choices: dict) -> str:
+def reproduce_command(
+    project_root: str,
+    target: Target,
+    seed: int,
+    name: str,
+    topology_choices: dict,
+    config_choices: dict,
+) -> str:
     parts = [
         "topotestix",
         "orchestrator",
@@ -469,7 +637,11 @@ def cmd_run(args, project_root: str) -> int:
         config_choices=args.config_choices,
     )
     if args.json:
-        print(json.dumps({"passed": passed, "runDir": run_dir, "report": report}, indent=2, sort_keys=True))
+        print(
+            json.dumps(
+                {"passed": passed, "runDir": run_dir, "report": report}, indent=2, sort_keys=True
+            )
+        )
     elif not args.quiet:
         if result.returncode != 0 and args.verbose:
             print(result.stderr, file=sys.stderr)
@@ -487,13 +659,19 @@ def cmd_fuzz(args, project_root: str) -> int:
 def cmd_shrink(args, project_root: str) -> int:
     target = get_cli_target(project_root, args)
     seed = args.seed
-    inputs = eval_json(generate_shrink_inputs_expr(seed, target.topology_target, target.config_target, project_root))
+    inputs = eval_json(
+        generate_shrink_inputs_expr(
+            seed, target.topology_target, target.config_target, project_root
+        )
+    )
     topology_choices = inputs["topologyChoices"]
     config_choices = inputs["configChoices"]
     name = args.name or f"{target.name}-shrink-{seed}"
 
     print("Verifying initial failure before shrinking...")
-    passed, _report, _run_dir, _result = run_once(project_root, target, seed, name, args.output_dir, topology_choices, config_choices)
+    passed, _report, _run_dir, _result = run_once(
+        project_root, target, seed, name, args.output_dir, topology_choices, config_choices
+    )
     if passed:
         print("Initial seed passed; nothing to shrink.", file=sys.stderr)
         return 1
@@ -503,7 +681,9 @@ def cmd_shrink(args, project_root: str) -> int:
         changed = False
         for path, next_index, candidate in candidate_choice_maps(topology_choices):
             print(f"Trying topology shrink {path} -> {next_index}")
-            passed, _report, _run_dir, _result = run_once(project_root, target, seed, name, args.output_dir, candidate, config_choices)
+            passed, _report, _run_dir, _result = run_once(
+                project_root, target, seed, name, args.output_dir, candidate, config_choices
+            )
             if not passed:
                 topology_choices = candidate
                 changed = True
@@ -512,11 +692,21 @@ def cmd_shrink(args, project_root: str) -> int:
         if changed:
             continue
         for role in sorted(config_choices):
-            for path, next_index, candidate_role_choices in candidate_choice_maps(config_choices[role]):
+            for path, next_index, candidate_role_choices in candidate_choice_maps(
+                config_choices[role]
+            ):
                 candidate_config_choices = dict(config_choices)
                 candidate_config_choices[role] = candidate_role_choices
                 print(f"Trying config shrink {role}{path} -> {next_index}")
-                passed, _report, _run_dir, _result = run_once(project_root, target, seed, name, args.output_dir, topology_choices, candidate_config_choices)
+                passed, _report, _run_dir, _result = run_once(
+                    project_root,
+                    target,
+                    seed,
+                    name,
+                    args.output_dir,
+                    topology_choices,
+                    candidate_config_choices,
+                )
                 if not passed:
                     config_choices = candidate_config_choices
                     changed = True
@@ -549,10 +739,13 @@ def cmd_sweep(args, project_root: str) -> int:
     seeds = parse_seed_range(args.seeds)
     json_mode = bool(getattr(args, "json", False))
     quiet = bool(getattr(args, "quiet", False))
+    jobs = max(1, int(getattr(args, "jobs", 1) or 1))
     failures = 0
     completed = 0
     skipped = 0
     failed_runs: list[dict] = []
+    total_time = 0.0
+    avg_run_time = 0.0
     for item in sweep_events(
         project_root,
         target,
@@ -561,6 +754,7 @@ def cmd_sweep(args, project_root: str) -> int:
         args.output_dir,
         args.fail_fast,
         getattr(args, "resume", False),
+        jobs,
     ):
         if item.type == "run_started":
             if not json_mode and not quiet:
@@ -568,7 +762,7 @@ def cmd_sweep(args, project_root: str) -> int:
         elif item.type == "run_skipped":
             skipped += 1
             if not json_mode and not quiet:
-                print(f"  SKIP seed={item.data['seed']} (already in run store)")
+                print(f"  SKIP [seed={item.data['seed']}] (already in run store)")
         elif item.type in {"run_passed", "run_failed"}:
             failures = item.data["failures"]
             completed += 1
@@ -580,10 +774,13 @@ def cmd_sweep(args, project_root: str) -> int:
                         "seed": item.data["seed"],
                         "runDir": item.data["runDir"],
                         "returncode": item.data.get("returncode"),
+                        "elapsed": item.data.get("elapsed"),
                     }
                 )
         elif item.type == "sweep_finished":
             total = item.data["total"]
+            total_time = float(item.data.get("totalTime", 0.0))
+            avg_run_time = float(item.data.get("avgRunTime", 0.0))
             if json_mode:
                 summary = {
                     "target": target.name,
@@ -592,12 +789,16 @@ def cmd_sweep(args, project_root: str) -> int:
                     "skipped": skipped,
                     "failed": failures,
                     "failures": failed_runs,
+                    "totalTime": round(total_time, 3),
+                    "avgRunTime": round(avg_run_time, 3),
+                    "jobs": jobs,
                 }
                 print(json.dumps(summary, indent=2, sort_keys=True))
             elif not quiet:
                 print(
                     f"Completed {total} planned runs; "
-                    f"completed={completed} skipped={skipped} failures={failures}"
+                    f"completed={completed} skipped={skipped} failures={failures} "
+                    f"| total {total_time:.1f}s avg {avg_run_time:.1f}s"
                 )
     return 1 if failures else 0
 

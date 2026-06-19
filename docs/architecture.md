@@ -15,9 +15,8 @@ Current layout: a Python `topotestix` package drives the CLI, while Nix keeps th
   │  - Calls runner, parses report.json, stores run metadata     │
   │  - On failure: shrink choice indices, iterate                │
    │  - Exposes targets/runs/orchestrator/runner commands         │
- │                                                              │
- │  Future: parallel seed execution                             │
- └────────┬────────────────────────────┬────────────────────────┘
+  │  - Parallel seed execution via `sweep --jobs N`              │
+  └────────┬────────────────────────────┬────────────────────────┘
           │                            │
           ▼                            ▼
  ┌─────────────────┐          ┌─────────────────┐
@@ -340,7 +339,7 @@ for seed in seeds:
 
 Each choice is shrunk independently: topology choices first, then per-role config choices. The shrinker operates on choice indices, not seeds — see [shrinking.md](shrinking.md).
 
-**Future (not priority):** parallel seed execution — run multiple seeds concurrently, then shrink only the failing ones.
+**Future (not priority):** speculative parallel shrinking (the greedy shrinking loop stays sequential). Parallel seed execution is implemented via `sweep --jobs N` — see [orchestrator.md](orchestrator.md). Note each seed builds a NixOS test that boots QEMU VM(s); `jobs × nodes-per-cluster` VMs may run at once, so tune `--jobs` to host RAM and Nix `max-jobs`. Per-run `elapsed` (monotonic) and sweep `totalTime`/`avgRunTime` are reported; under parallelism `sum(elapsed)` may exceed `totalTime` (overlapping runs), while `avgRunTime` is the mean per-run duration.
 
 ---
 
