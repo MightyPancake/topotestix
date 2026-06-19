@@ -13,7 +13,7 @@ Four SUTs, ordered by thesis importance:
 | SUT | Nodes | System type | Thesis role | Status |
 |---|---|---|---|---|
 | **kafka-cluster** | 3 | Log-based messaging (KRaft) | Headline: replication, partition tolerance | Case study complete |
-| **etcd** | 3 | Strongly-consistent KV (Raft) | Compare against Kafka on consensus + partition behavior | Next |
+| **etcd-cluster** | 3 | Strongly-consistent KV (Raft) | Compare against Kafka on consensus + partition behavior | Target implemented; smoke passed |
 | **postgresql** | 2 | Relational DB w/ streaming replication | Async replication, write durability | New |
 | **nginx** | 1 | HTTP server | Smoke target only; **drop from thesis chapter** | Unchanged |
 
@@ -28,7 +28,7 @@ NixOS support is mature for all three (`services.etcd`, `services.postgresql`, `
 
 ## Phase 1 — Strengthen `kafka-cluster`
 
-### 1.1 Expand `targets/config/kafka-cluster.nix`
+### 1.1 Expand `targets/kafka-cluster/config.nix`
 
 Replace the current 4-option spec with this larger one. The new options interact with each other and with the 3-node topology in ways that have known failure modes in production.
 
@@ -176,7 +176,16 @@ Next: move to `etcd-cluster` for a second real distributed-system case study.
 
 ## Phase 2 — New SUT: `etcd-cluster` (3-node Raft)
 
-### 2.1 `targets/topology/etcd-cluster.nix`
+Status: implemented and smoke-tested. See:
+
+```text
+experiments/etcd-cluster-notes.md
+experiments/etcd-cluster-smoke-1-3-fixed.log
+```
+
+Next empirical step: run a 30–50 seed sweep and classify failures.
+
+### 2.1 `targets/etcd-cluster/topology.nix`
 
 ```nix
 { lib, ... }:
@@ -189,7 +198,7 @@ Next: move to `etcd-cluster` for a second real distributed-system case study.
 }
 ```
 
-### 2.2 `targets/config/etcd.nix`
+### 2.2 `targets/etcd-cluster/config.nix`
 
 ```nix
 { lib, ... }:
@@ -245,7 +254,7 @@ etcd-cluster = {
 
 ## Phase 3 — New SUT: `postgres-cluster` (primary + replica)
 
-### 3.1 `targets/topology/postgres-cluster.nix`
+### 3.1 `targets/postgresql/topology.nix`
 
 ```nix
 { lib, ... }:
@@ -258,7 +267,7 @@ etcd-cluster = {
 }
 ```
 
-### 3.2 `targets/config/postgres.nix`
+### 3.2 `targets/postgresql/config.nix`
 
 ```nix
 { lib, ... }:

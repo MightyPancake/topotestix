@@ -6,6 +6,8 @@ Tests use [nix-unit](https://github.com/nix-community/nix-unit), a Nix unit test
 
 For interpretation of the Kafka empirical sweep results, see [empirical-kafka-cluster.md](empirical-kafka-cluster.md). That document explains why the Kafka findings should be framed as production-relevant configuration/workload incompatibilities rather than Kafka implementation bugs.
 
+For interpretation of the etcd empirical sweep and shrinking results, see [empirical-etcd-cluster.md](empirical-etcd-cluster.md). The etcd v2 result is the recommended second thesis case study: etcd starts and passes basic distributed-system checks, but a quota-sensitive write-burst property fails under a small backend quota.
+
 ## Installing nix-unit
 
 ### Option 1: Build from source

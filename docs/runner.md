@@ -78,7 +78,7 @@ User provides:
   baseConfig     (NixOS module — e.g. targets/nginx/module.nix)
   testScript     (Python string — e.g. targets/nginx/test-script.py)
   properties     (list of attrsets — e.g. targets/nginx/properties.nix)
-  configTarget   (fuzz target spec — e.g. targets/config/nginx.nix)
+  configTarget   (fuzz target spec — e.g. targets/nginx/config.nix)
   seed           (integer)
 
 Flow:

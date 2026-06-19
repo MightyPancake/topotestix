@@ -8,7 +8,7 @@ The orchestrator has two components:
 
 1. **`lib/orchestrate.nix`** — Nix function that composes the full pipeline
 2. **`topotestix/orchestrator.py`** — Python implementation of run/fuzz/shrink/sweep helpers used by the CLI
-3. **`topotestix/cli.py`** — public `topotestix` command tree (`orchestrator`, `runner`, `runs`, `targets`, `tui`)
+3. **`topotestix/cli.py`** — public `topotestix` command tree (`orchestrator`, `runner`, `runs`, `targets`)
 
 All Nix-type computation (fuzzer, expandTopology, mkForce merge) must happen in Nix — these values can't be serialized through Python. Python is a thin CLI wrapper: generate temp `.nix` file → `nix build --impure` → parse `report.json`.
 
@@ -197,8 +197,8 @@ let
 
   orchestrate = import /abs/path/to/lib/orchestrate.nix { inherit pkgs lib; testers = pkgs.testers; };
 
-  configTarget = import /abs/path/to/targets/config/nginx.nix { inherit lib; };
-  topologyTarget = import /abs/path/to/targets/topology/single-machine.nix { inherit lib; };
+  configTarget = import /abs/path/to/targets/nginx/config.nix { inherit lib; };
+  topologyTarget = import /abs/path/to/targets/nginx/topology.nix { inherit lib; };
   baseModule = import /abs/path/to/targets/nginx/module.nix;
   propertiesMod = import /abs/path/to/targets/nginx/properties.nix { inherit lib; };
   testScript = builtins.readFile /abs/path/to/targets/nginx/test-script.py;
@@ -250,7 +250,7 @@ Two shrinking approaches, by priority:
 - Multi-seed execution / parallel builds (Phase 7)
 - Failure-reproducing flake output
 - Runner as HTTP service
-- Richer TUI monitoring and attach mode
+- TUI monitoring and attach mode
 
 ## Example of use:
 

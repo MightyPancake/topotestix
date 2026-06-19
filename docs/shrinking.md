@@ -315,7 +315,7 @@ The Python orchestrator uses `nix eval --json` to query the shrinker module:
 nix eval --impure --json --expr '
   let
     shrinker = import ./lib/shrinker.nix { inherit lib; };
-    target = import ./targets/config/nginx.nix { inherit lib; };
+    target = import ./targets/nginx/config.nix { inherit lib; };
   in shrinker.choicePaths target
 '
 
@@ -323,7 +323,7 @@ nix eval --impure --json --expr '
 nix eval --impure --json --expr '
   let
     fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-    result = fuzzer { seed = "42"; target = import ./targets/config/nginx.nix { inherit lib; }; };
+    result = fuzzer { seed = "42"; target = import ./targets/nginx/config.nix { inherit lib; }; };
   in result.choices
 '
 ```

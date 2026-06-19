@@ -14,7 +14,7 @@ Current layout: a Python `topotestix` package drives the CLI, while Nix keeps th
  │  - Three-layer merge: base ⊕ config ⊕ topology               │
   │  - Calls runner, parses report.json, stores run metadata     │
   │  - On failure: shrink choice indices, iterate                │
-  │  - Exposes targets/runs/orchestrator/runner/tui commands     │
+   │  - Exposes targets/runs/orchestrator/runner commands         │
  │                                                              │
  │  Future: parallel seed execution                             │
  └────────┬────────────────────────────┬────────────────────────┘
@@ -134,19 +134,16 @@ topotestix/
  │   ├── cli.py                    # topotestix command tree
  │   ├── orchestrator.py           # run/fuzz/shrink/sweep logic
  │   ├── runner.py                 # runner inspection helpers
- │   ├── run_store.py              # .topotestix/runs persistence
- │   └── tui.py                    # minimal Textual TUI
- │
+  │   ├── run_store.py              # .topotestix/runs persistence
+  │
  ├── targets/                      # Fuzz target specs (define what to fuzz)
-│   ├── config/                   # Per-node config targets
-│   │   └── nginx.nix             # Example: NixOS option ranges for nginx
-│   ├── topology/                  # Cluster layout targets
-│   │   └── simple-cluster.nix    # Example: node count, roles, VLAN set specs
  │   ├── default.nix               # Named target registry
- │   └── nginx/                    # SUT definition
-│       ├── module.nix            # Nginx NixOS module + base config
-│       ├── properties.nix        # Nginx-specific properties
-│       └── test-script.py         # Nginx test procedure
+ │   └── nginx/                    # SUT definition (one dir per target)
+ │       ├── topology.nix          # Cluster layout: node count, roles, VLAN sets
+ │       ├── config.nix            # Per-node NixOS option ranges (fuzz surface)
+ │       ├── module.nix            # Nginx NixOS module + base config
+ │       ├── properties.nix        # Nginx-specific properties
+ │       └── test-script.py        # Nginx test procedure
 │
  ├── orchestrator/                 # Compatibility wrapper for legacy entrypoint
  │   └── orchestrator.py           # Thin wrapper around topotestix CLI
@@ -358,7 +355,7 @@ Each choice is shrunk independently: topology choices first, then per-role confi
 7. **Seed-as-key** — all seeds derived from master_seed. Reproducibility from one number. Shrinking operates on choice indices, not seeds (see [shrinking.md](shrinking.md)).
 8. **Properties are Python helpers defined in Nix** — reusable across SUTs, injected into testScript by runner, and currently auto-appended after the user script
 9. **Fuzzer outputs only fuzzed options** — base config is added by orchestrator, keeping the fuzzer's responsibility minimal
-10. **Every module usable from CLI** — fuzzer, targets, runs, runner, orchestrator, and TUI are exposed under `topotestix`
+10. **Every module usable from CLI** — fuzzer, targets, runs, runner, and orchestrator are exposed under `topotestix`
 11. **Lazy evaluation leveraged** — runner imports fuzzer via Nix, so only evaluated configs are built
 
 ---

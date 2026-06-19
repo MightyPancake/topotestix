@@ -126,7 +126,7 @@ let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
   fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-  topologyTarget = import ./targets/topology/simple-cluster.nix { inherit lib; };
+  topologyTarget = import ./targets/kafka-cluster/topology.nix { inherit lib; };
 in
 fuzzer { seed = "42"; target = topologyTarget; }
 '
@@ -163,7 +163,7 @@ let
   lib = pkgs.lib;
   shrinker = import ./lib/shrinker.nix { inherit lib; };
   fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-  topologyTarget = import ./targets/topology/simple-cluster.nix { inherit lib; };
+  topologyTarget = import ./targets/kafka-cluster/topology.nix { inherit lib; };
   fuzzedTopology = fuzzer { seed = "42"; target = topologyTarget; };
 in
 shrinker.apply topologyTarget fuzzedTopology.result { ".roles.broker" = 0; }
@@ -209,7 +209,7 @@ let
   lib = pkgs.lib;
   expandTopology = (import ./lib/expand-topology.nix { inherit lib; }).expandTopology;
   fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-  topologyTarget = import ./targets/topology/simple-cluster.nix { inherit lib; };
+  topologyTarget = import ./targets/kafka-cluster/topology.nix { inherit lib; };
   fuzzedTopology = fuzzer { seed = "42"; target = topologyTarget; };
 in
 expandTopology { topology-map = fuzzedTopology.result; }
@@ -457,7 +457,7 @@ let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
   shrinker = import ./lib/shrinker.nix { inherit lib; };
-  configTarget = import ./targets/config/nginx.nix { inherit lib; };
+  configTarget = import ./targets/nginx/config.nix { inherit lib; };
 in
 shrinker.choicePaths configTarget
 '
@@ -469,7 +469,7 @@ let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
   shrinker = import ./lib/shrinker.nix { inherit lib; };
-  configTarget = import ./targets/config/nginx.nix { inherit lib; };
+  configTarget = import ./targets/nginx/config.nix { inherit lib; };
 in
 shrinker.optionsFor configTarget ".virtualisation.memorySize"
 '
@@ -481,7 +481,7 @@ let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
   shrinker = import ./lib/shrinker.nix { inherit lib; };
-  configTarget = import ./targets/config/nginx.nix { inherit lib; };
+  configTarget = import ./targets/nginx/config.nix { inherit lib; };
 in
 shrinker.valueAt configTarget ".virtualisation.memorySize" 0
 '
@@ -493,7 +493,7 @@ let
   pkgs = import <nixpkgs> {};
   lib = pkgs.lib;
   fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-  configTarget = import ./targets/config/nginx.nix { inherit lib; };
+  configTarget = import ./targets/nginx/config.nix { inherit lib; };
 in
 (fuzzer { seed = "42"; target = configTarget; }).choices
 '
@@ -506,7 +506,7 @@ let
   lib = pkgs.lib;
   shrinker = import ./lib/shrinker.nix { inherit lib; };
   fuzzer = (import ./lib/fuzzer.nix { inherit lib; }).fuzzer;
-  configTarget = import ./targets/config/nginx.nix { inherit lib; };
+  configTarget = import ./targets/nginx/config.nix { inherit lib; };
   fuzzedConfig = fuzzer { seed = "42"; target = configTarget; };
 in
 shrinker.apply configTarget fuzzedConfig.result { ".virtualisation.memorySize" = 0; }

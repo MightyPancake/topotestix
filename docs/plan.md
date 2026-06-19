@@ -19,14 +19,14 @@
 - [x] Update `lib/expand-topology.nix` — return `{ nodeConfigs, nodeRoles }` instead of just node attrset
 - [x] Update expand-topology tests for new output structure
 - [x] Rewrite `orchestrator/orchestrator.py` — CLI with `run` subcommand, single-seed execution
-- [x] Create `targets/topology/single-machine.nix` — trivial topology for single-node tests
+- [x] Create `targets/nginx/topology.nix` — trivial topology for single-node tests
 - [x] Update `targets/nginx/test-script.py` — `machine` → `machine1`
 - [x] Update `targets/nginx/properties.nix` — `machine` → `machine1`
 - [x] End-to-end verification with nginx smoke test via orchestrator
 
 ## Phase 3: Topology
 
-- [x] topology target spec (VLAN sets per role, node count, role counts) — exists as `targets/topology/simple-cluster.nix`
+- [x] topology target spec (VLAN sets per role, node count, role counts) — exists as `targets/kafka-cluster/topology.nix`
 - [x] expandTopology function (topology-map → per-node VLAN configs, deterministic, no seed) — exists as `lib/expand-topology.nix`
 - [x] expandTopology tests (unit tests for expansion logic + nodeRoles output)
 - [x] orchestrator integration (fuzzer call for topology + expandTopology + per-role fuzzer calls) — done in Phase 2
@@ -120,8 +120,7 @@
 - [x] Persistent run store under `.topotestix/runs`
 - [x] Run history CLI (`topotestix runs list/show/logs/report`)
 - [x] Practical runner CLI (`topotestix runner compose-script/inspect-report/show-properties`)
-- [x] Event-based execution model for CLI progress and TUI rendering
-- [x] Initial Textual TUI execution mode (`topotestix tui TARGET --seeds ...`)
+- [x] Event-based execution model for CLI progress
 - [x] Compatibility wrapper for existing `orchestrator/orchestrator.py` commands
 
 ## Phase 7: Scale
@@ -131,6 +130,7 @@
 ## Phase 8: Extra Features
 
 - [ ] failure-reproducing flake
+- [ ] Textual TUI execution mode (`topotestix tui TARGET --seeds ...`) — removed from Phase 6; not currently maintained, revisit as future work
 - [ ] fuzzing regular nixos configurations (auto-resolving option variants from NixOS documentation so users only need to point at a configuration and specify which options to fuzz)
 - [ ] runner as http service
 - [ ] selective property inclusion via `--property-name` CLI flag
@@ -164,7 +164,7 @@
 - Smoke test is manual: run a single seed through fuzzer → merge → runner, verify report.json output
 - Phase 2 shrinking: not in scope. Phase 4 adds choice-based shrinking — the shrinker module reduces option indices toward 0 (lower index = simpler value). See [shrinking.md](shrinking.md).
 - Shrinking approach: choice-based (not seed-based). The fuzzer returns `{ result, choices }` where choices maps paths to indices. The shrinker replaces specific indices with lower ones. Python orchestrator drives the iterative shrinking loop. See [shrinking.md](shrinking.md).
-- Phase 2 always requires `--topology-target` — no single-node mode. Single-node tests use a trivial topology like `single-machine.nix`.
+- Phase 2 always requires `--topology-target` — no single-node mode. Single-node tests use a trivial topology like `targets/nginx/topology.nix`.
 - Orchestrator starts as single orchestrator.py with argparse; later packaged as Nix-managed Python package (pyproject.toml)
 - Nix testing via nix-unit (test attributes prefixed with `test`, expr/expected format)
 - Kafka SUT (Phase 5) replaces the nginx SUT only after shrinking is proven on the fast nginx pipeline.
