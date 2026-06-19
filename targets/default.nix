@@ -1,8 +1,8 @@
 {
   nginx = {
     description = "Single-node nginx smoke target";
-    topologyTarget = ./topology/single-machine.nix;
-    configTarget = ./config/nginx.nix;
+    topologyTarget = ./nginx/topology.nix;
+    configTarget = ./nginx/config.nix;
     baseModule = ./nginx/module.nix;
     testScript = ./nginx/test-script.py;
     properties = ./nginx/properties.nix;
@@ -11,8 +11,8 @@
 
   kafka = {
     description = "Single-node Kafka KRaft smoke target";
-    topologyTarget = ./topology/single-machine.nix;
-    configTarget = ./config/kafka.nix;
+    topologyTarget = ./kafka/topology.nix;
+    configTarget = ./kafka/config.nix;
     baseModule = ./kafka/module.nix;
     testScript = ./kafka/test-script.py;
     properties = ./kafka/properties.nix;
@@ -21,11 +21,31 @@
 
   kafka-cluster = {
     description = "Three-node Kafka KRaft cluster smoke target";
-    topologyTarget = ./topology/kafka-cluster.nix;
-    configTarget = ./config/kafka-cluster.nix;
+    topologyTarget = ./kafka-cluster/topology.nix;
+    configTarget = ./kafka-cluster/config.nix;
     baseModule = ./kafka-cluster/module.nix;
     testScript = ./kafka-cluster/test-script.py;
     properties = ./kafka-cluster/properties.nix;
     reportNode = "kafka1";
+  };
+
+  etcd-cluster = {
+    description = "Three-node etcd Raft cluster target";
+    topologyTarget = ./etcd-cluster/topology.nix;
+    configTarget = ./etcd-cluster/config.nix;
+    baseModule = ./etcd-cluster/module.nix;
+    testScript = ./etcd-cluster/test-script.py;
+    properties = ./etcd-cluster/properties.nix;
+    reportNode = "etcd1";
+  };
+
+  postgresql = {
+    description = "Two-node PostgreSQL primary/standby streaming replication target";
+    topologyTarget = ./postgresql/topology.nix;
+    configTarget = ./postgresql/config.nix;
+    baseModule = ./postgresql/module.nix;
+    testScript = ./postgresql/test-script.py;
+    properties = ./postgresql/properties.nix;
+    reportNode = "primary1";
   };
 }

@@ -28,7 +28,7 @@
 #   orchestrate {
 #     seed = 5;
 #     topologyTarget = { roles.machine = [ 1 ]; machineVlans = [ [ 1 ]; };
-#     configTarget = import ./targets/config/nginx.nix { inherit lib; };
+#     configTarget = import ./targets/nginx/config.nix { inherit lib; };
 #     baseModule = import ./targets/nginx/module.nix;
 #     testScript = builtins.readFile ./targets/nginx/test-script.py;
 #     properties = builtins.attrValues (import ./targets/nginx/properties.nix { inherit lib; });
@@ -39,8 +39,8 @@
 #
 #   orchestrate {
 #     seed = 42;
-#     topologyTarget = import ./targets/topology/simple-cluster.nix { inherit lib; };
-#     configTarget = import ./targets/config/kafka.nix { inherit lib; };
+#     topologyTarget = import ./targets/kafka/topology.nix { inherit lib; };
+#     configTarget = import ./targets/kafka/config.nix { inherit lib; };
 #     baseModule = import ./targets/kafka/module.nix;
 #     testScript = builtins.readFile ./targets/kafka/test-script.py;
 #     properties = builtins.attrValues (import ./targets/kafka/properties.nix { inherit lib; });

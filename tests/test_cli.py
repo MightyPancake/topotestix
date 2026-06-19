@@ -48,8 +48,8 @@ class CliTests(unittest.TestCase):
         target = Target(
             name="nginx",
             description="",
-            topology_target="targets/topology/single-machine.nix",
-            config_target="targets/config/nginx.nix",
+            topology_target="targets/nginx/topology.nix",
+            config_target="targets/nginx/config.nix",
             base_module="targets/nginx/module.nix",
             test_script="targets/nginx/test-script.py",
             properties="targets/nginx/properties.nix",
@@ -59,14 +59,14 @@ class CliTests(unittest.TestCase):
         command = reproduce_command("/repo", target, 4, "nginx-fail", {}, {})
 
         self.assertIn("--project-root /repo", command)
-        self.assertIn("--topology-target targets/topology/single-machine.nix", command)
+        self.assertIn("--topology-target targets/nginx/topology.nix", command)
         self.assertIn("--properties targets/nginx/properties.nix", command)
 
     def test_generated_inspect_expression_contains_topology_and_role_fuzz(self):
         expr = generate_inspect_expr(
             3,
-            "targets/topology/single-machine.nix",
-            "targets/config/nginx.nix",
+            "targets/nginx/topology.nix",
+            "targets/nginx/config.nix",
             "/repo",
         )
 
@@ -78,8 +78,8 @@ class CliTests(unittest.TestCase):
         target = Target(
             name="nginx",
             description="",
-            topology_target="targets/topology/single-machine.nix",
-            config_target="targets/config/nginx.nix",
+            topology_target="targets/nginx/topology.nix",
+            config_target="targets/nginx/config.nix",
             base_module="targets/nginx/module.nix",
             test_script="targets/nginx/test-script.py",
             properties="targets/nginx/properties.nix",
@@ -87,7 +87,9 @@ class CliTests(unittest.TestCase):
         )
         fake_result = type("Result", (), {"returncode": 1})()
 
-        with patch("topotestix.orchestrator.run_once", return_value=(False, [], "/tmp/run", fake_result)):
+        with patch(
+            "topotestix.orchestrator.run_once", return_value=(False, [], "/tmp/run", fake_result)
+        ):
             events = list(sweep_events("/repo", target, [4], fail_fast=True))
 
         self.assertEqual(events[0].type, "sweep_started")
@@ -98,8 +100,8 @@ class CliTests(unittest.TestCase):
         target = Target(
             name="nginx",
             description="",
-            topology_target="targets/topology/single-machine.nix",
-            config_target="targets/config/nginx.nix",
+            topology_target="targets/nginx/topology.nix",
+            config_target="targets/nginx/config.nix",
             base_module="targets/nginx/module.nix",
             test_script="targets/nginx/test-script.py",
             properties="targets/nginx/properties.nix",
@@ -108,7 +110,10 @@ class CliTests(unittest.TestCase):
         fake_result = type("Result", (), {"returncode": 1})()
         report = [{"name": "prop", "status": "failed", "message": "boom"}]
 
-        with patch("topotestix.orchestrator.run_once", return_value=(False, report, "/tmp/run", fake_result)):
+        with patch(
+            "topotestix.orchestrator.run_once",
+            return_value=(False, report, "/tmp/run", fake_result),
+        ):
             events = list(run_once_events("/repo", target, 4, "nginx"))
 
         self.assertEqual(events[0].type, "run_started")
