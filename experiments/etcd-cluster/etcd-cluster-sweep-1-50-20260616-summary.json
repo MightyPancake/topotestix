@@ -1,0 +1,1071 @@
+{
+  "failed": 11,
+  "failedSeeds": [
+    5,
+    7,
+    20,
+    21,
+    25,
+    29,
+    30,
+    34,
+    38,
+    42,
+    49
+  ],
+  "failureClasses": {
+    "invalid-etcd-election-timeout-heartbeat-ratio": 11
+  },
+  "logs": [
+    "experiments/etcd-cluster-sweep-1-50-20260615.log",
+    "experiments/etcd-cluster-sweep-38-50-20260616.log"
+  ],
+  "note": "First log was interrupted by the 3-hour harness timeout after seed 37; seeds 38..50 were completed in the continuation log. Summary was reconstructed from latest run.json per seed after the sweep began.",
+  "passed": 39,
+  "passedSeeds": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    22,
+    23,
+    24,
+    26,
+    27,
+    28,
+    31,
+    32,
+    33,
+    35,
+    36,
+    37,
+    39,
+    40,
+    41,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    50
+  ],
+  "results": [
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-211934-etcd-cluster-seed-1-etcd-cluster-seed-1",
+      "seed": 1,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-211942-etcd-cluster-seed-2-etcd-cluster-seed-2",
+      "seed": 2,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-211951-etcd-cluster-seed-3-etcd-cluster-seed-3",
+      "seed": 3,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-212000-etcd-cluster-seed-4-etcd-cluster-seed-4",
+      "seed": 4,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-212148-etcd-cluster-seed-5-etcd-cluster-seed-5",
+      "seed": 5,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-213712-etcd-cluster-seed-6-etcd-cluster-seed-6",
+      "seed": 6,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-213903-etcd-cluster-seed-7-etcd-cluster-seed-7",
+      "seed": 7,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-215427-etcd-cluster-seed-8-etcd-cluster-seed-8",
+      "seed": 8,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-215618-etcd-cluster-seed-9-etcd-cluster-seed-9",
+      "seed": 9,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-215812-etcd-cluster-seed-10-etcd-cluster-seed-10",
+      "seed": 10,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-220005-etcd-cluster-seed-11-etcd-cluster-seed-11",
+      "seed": 11,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-220158-etcd-cluster-seed-12-etcd-cluster-seed-12",
+      "seed": 12,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-220347-etcd-cluster-seed-13-etcd-cluster-seed-13",
+      "seed": 13,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-220534-etcd-cluster-seed-14-etcd-cluster-seed-14",
+      "seed": 14,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-220725-etcd-cluster-seed-15-etcd-cluster-seed-15",
+      "seed": 15,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-220913-etcd-cluster-seed-16-etcd-cluster-seed-16",
+      "seed": 16,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-221059-etcd-cluster-seed-17-etcd-cluster-seed-17",
+      "seed": 17,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-221247-etcd-cluster-seed-18-etcd-cluster-seed-18",
+      "seed": 18,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-221432-etcd-cluster-seed-19-etcd-cluster-seed-19",
+      "seed": 19,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-221620-etcd-cluster-seed-20-etcd-cluster-seed-20",
+      "seed": 20,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-223144-etcd-cluster-seed-21-etcd-cluster-seed-21",
+      "seed": 21,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-224703-etcd-cluster-seed-22-etcd-cluster-seed-22",
+      "seed": 22,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-224850-etcd-cluster-seed-23-etcd-cluster-seed-23",
+      "seed": 23,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-225033-etcd-cluster-seed-24-etcd-cluster-seed-24",
+      "seed": 24,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-225220-etcd-cluster-seed-25-etcd-cluster-seed-25",
+      "seed": 25,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-230739-etcd-cluster-seed-26-etcd-cluster-seed-26",
+      "seed": 26,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-230923-etcd-cluster-seed-27-etcd-cluster-seed-27",
+      "seed": 27,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-231112-etcd-cluster-seed-28-etcd-cluster-seed-28",
+      "seed": 28,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-231303-etcd-cluster-seed-29-etcd-cluster-seed-29",
+      "seed": 29,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-232826-etcd-cluster-seed-30-etcd-cluster-seed-30",
+      "seed": 30,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-234345-etcd-cluster-seed-31-etcd-cluster-seed-31",
+      "seed": 31,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-234531-etcd-cluster-seed-32-etcd-cluster-seed-32",
+      "seed": 32,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260615-234716-etcd-cluster-seed-33-etcd-cluster-seed-33",
+      "seed": 33,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260615-234901-etcd-cluster-seed-34-etcd-cluster-seed-34",
+      "seed": 34,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-000420-etcd-cluster-seed-35-etcd-cluster-seed-35",
+      "seed": 35,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-000607-etcd-cluster-seed-36-etcd-cluster-seed-36",
+      "seed": 36,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-000753-etcd-cluster-seed-37-etcd-cluster-seed-37",
+      "seed": 37,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260616-001957-etcd-cluster-seed-38-etcd-cluster-seed-38",
+      "seed": 38,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-003508-etcd-cluster-seed-39-etcd-cluster-seed-39",
+      "seed": 39,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-003700-etcd-cluster-seed-40-etcd-cluster-seed-40",
+      "seed": 40,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-003855-etcd-cluster-seed-41-etcd-cluster-seed-41",
+      "seed": 41,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260616-004048-etcd-cluster-seed-42-etcd-cluster-seed-42",
+      "seed": 42,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-005609-etcd-cluster-seed-43-etcd-cluster-seed-43",
+      "seed": 43,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-005805-etcd-cluster-seed-44-etcd-cluster-seed-44",
+      "seed": 44,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-010000-etcd-cluster-seed-45-etcd-cluster-seed-45",
+      "seed": 45,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-010152-etcd-cluster-seed-46-etcd-cluster-seed-46",
+      "seed": 46,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 100,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-010346-etcd-cluster-seed-47-etcd-cluster-seed-47",
+      "seed": 47,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 2048,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-010550-etcd-cluster-seed-48-etcd-cluster-seed-48",
+      "seed": 48,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 1000,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 2048,
+        "quotaBackendBytes": 67108864,
+        "snapshotCount": 10000
+      },
+      "failureClass": "invalid-etcd-election-timeout-heartbeat-ratio",
+      "failureEvidence": "election-timeout=1000 is less than 5 * heartbeat-interval=250",
+      "runDir": ".topotestix/runs/20260616-010747-etcd-cluster-seed-49-etcd-cluster-seed-49",
+      "seed": 49,
+      "status": "failed",
+      "summary": {
+        "failed": 0,
+        "passed": 0,
+        "total": 0
+      }
+    },
+    {
+      "config": {
+        "diskSize": 4096,
+        "electionTimeoutMs": 2500,
+        "heartbeatIntervalMs": 250,
+        "memorySize": 1024,
+        "quotaBackendBytes": 16777216,
+        "snapshotCount": 100000
+      },
+      "failureClass": null,
+      "failureEvidence": null,
+      "runDir": ".topotestix/runs/20260616-012308-etcd-cluster-seed-50-etcd-cluster-seed-50",
+      "seed": 50,
+      "status": "passed",
+      "summary": {
+        "failed": 0,
+        "passed": 11,
+        "total": 11
+      }
+    }
+  ],
+  "seeds": "1..50",
+  "target": "etcd-cluster",
+  "total": 50
+}

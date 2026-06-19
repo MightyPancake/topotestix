@@ -1,0 +1,10 @@
+Running etcd-cluster seed=1
+
+============================================================
+ TopoTestix Results
+ Seed: 1
+ Name: etcd-cluster-seed-1
+============================================================
+
+ VM test FAILED (build error)
+ Run dir: /home/freerat/projects/topotestix/.topotestix/runs/20260615-175449-etcd-cluster-seed-1-etcd-cluster-seed-1

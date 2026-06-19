@@ -1,0 +1,19 @@
+{
+  "completed": 2,
+  "failed": 2,
+  "failures": [
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260615-175735-etcd-cluster-seed-2-etcd-cluster-seed-2",
+      "seed": 2
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260615-175927-etcd-cluster-seed-3-etcd-cluster-seed-3",
+      "seed": 3
+    }
+  ],
+  "skipped": 1,
+  "target": "etcd-cluster",
+  "total": 3
+}

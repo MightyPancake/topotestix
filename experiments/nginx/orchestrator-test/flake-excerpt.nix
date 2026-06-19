@@ -10,8 +10,8 @@
   In flake.nix, these bindings are at the top of the `outputs` let-block:
 
     orchestrate = (import ./lib/orchestrate.nix { inherit pkgs lib; testers = pkgs.testers; }).orchestrate;
-    topologyTarget = import ./targets/topology/single-machine.nix { inherit lib; };
-    configTarget = import ./targets/config/nginx.nix { inherit lib; };
+    topologyTarget = import ./targets/nginx/topology.nix { inherit lib; };
+    configTarget = import ./targets/nginx/config.nix { inherit lib; };
     baseModule = import ./targets/nginx/module.nix;
     nginxTestScript = builtins.readFile ./targets/nginx/test-script.py;
     propertiesMod = import ./targets/nginx/properties.nix { inherit lib; };
@@ -33,7 +33,7 @@
     - seed = 5 is hardcoded in the flake. The run-orchestrator-test.sh script
       builds with a different seed by generating a temp .nix file.
 
-    - The topology target for single-node tests is single-machine.nix,
+    - The topology target for single-node tests is targets/nginx/topology.nix,
       which defines { roles.machine = 1; machineVlans = [ [1] ]; }.
       This produces node name "machine1" (always indexed naming).
 

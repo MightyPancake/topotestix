@@ -32,8 +32,8 @@ let
 
   orchestrate = (import ${PROJECT_ROOT}/lib/orchestrate.nix { inherit pkgs lib; testers = pkgs.testers; }).orchestrate;
 
-  topologyTarget = import ${PROJECT_ROOT}/targets/topology/single-machine.nix { inherit lib; };
-  configTarget = import ${PROJECT_ROOT}/targets/config/nginx.nix { inherit lib; };
+  topologyTarget = import ${PROJECT_ROOT}/targets/nginx/topology.nix { inherit lib; };
+  configTarget = import ${PROJECT_ROOT}/targets/nginx/config.nix { inherit lib; };
   baseModule = import ${PROJECT_ROOT}/targets/nginx/module.nix;
   testScript = builtins.readFile ${PROJECT_ROOT}/targets/nginx/test-script.py;
   propertiesMod = import ${PROJECT_ROOT}/targets/nginx/properties.nix { inherit lib; };

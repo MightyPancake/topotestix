@@ -11,7 +11,7 @@
 
     topotestixLib = import ./lib { inherit lib; };
     runner = import ./lib/runner.nix { inherit pkgs lib; testers = pkgs.testers; };
-    nginxConfigTarget = import ./targets/config/nginx.nix { inherit lib; };
+    nginxConfigTarget = import ./targets/nginx/config.nix { inherit lib; };
     nginxBaseModule = import ./targets/nginx/module.nix;
     nginxProperties = import ./targets/nginx/properties.nix { inherit lib; };
     nginxTestScript = builtins.readFile ./targets/nginx/test-script.py;

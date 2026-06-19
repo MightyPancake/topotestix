@@ -23,7 +23,7 @@ The target has now been expanded to:
 
 ### Configuration surface
 
-File: `targets/config/kafka-cluster.nix`
+File: `targets/kafka-cluster/config.nix`
 
 Added/expanded fuzzed dimensions:
 

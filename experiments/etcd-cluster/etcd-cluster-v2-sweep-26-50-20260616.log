@@ -1,0 +1,50 @@
+{
+  "completed": 25,
+  "failed": 8,
+  "failures": [
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-084033-etcd-cluster-seed-28-etcd-cluster-seed-28",
+      "seed": 28
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-084952-etcd-cluster-seed-33-etcd-cluster-seed-33",
+      "seed": 33
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-085144-etcd-cluster-seed-34-etcd-cluster-seed-34",
+      "seed": 34
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-085917-etcd-cluster-seed-38-etcd-cluster-seed-38",
+      "seed": 38
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-090303-etcd-cluster-seed-40-etcd-cluster-seed-40",
+      "seed": 40
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-090453-etcd-cluster-seed-41-etcd-cluster-seed-41",
+      "seed": 41
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-090642-etcd-cluster-seed-42-etcd-cluster-seed-42",
+      "seed": 42
+    },
+    {
+      "returncode": 0,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-090829-etcd-cluster-seed-43-etcd-cluster-seed-43",
+      "seed": 43
+    }
+  ],
+  "skipped": 0,
+  "target": "etcd-cluster",
+  "total": 25
+}
+sweep_exit=1

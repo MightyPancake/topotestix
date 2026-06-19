@@ -1,0 +1,25 @@
+{
+  "completed": 13,
+  "failed": 3,
+  "failures": [
+    {
+      "returncode": 1,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-001957-etcd-cluster-seed-38-etcd-cluster-seed-38",
+      "seed": 38
+    },
+    {
+      "returncode": 1,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-004048-etcd-cluster-seed-42-etcd-cluster-seed-42",
+      "seed": 42
+    },
+    {
+      "returncode": 1,
+      "runDir": "/home/freerat/projects/topotestix/.topotestix/runs/20260616-010747-etcd-cluster-seed-49-etcd-cluster-seed-49",
+      "seed": 49
+    }
+  ],
+  "skipped": 0,
+  "target": "etcd-cluster",
+  "total": 13
+}
+sweep_exit=1

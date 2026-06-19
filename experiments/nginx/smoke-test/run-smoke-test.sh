@@ -24,7 +24,7 @@ FUZZED_CONFIG=$(nix eval --impure --json --expr "
     pkgs = import <nixpkgs> {};
     lib = pkgs.lib;
     topotestixLib = import ${PROJECT_ROOT}/lib { inherit lib; };
-    nginxConfigTarget = import ${PROJECT_ROOT}/targets/config/nginx.nix { inherit lib; };
+    nginxConfigTarget = import ${PROJECT_ROOT}/targets/nginx/config.nix { inherit lib; };
   in
   topotestixLib.fuzzer.fuzzer { seed = \"${SEED}\"; target = nginxConfigTarget; }
 " 2>/dev/null)
@@ -62,7 +62,7 @@ let
   topotestixLib = import ${PROJECT_ROOT}/lib { inherit lib; };
   runner = import ${PROJECT_ROOT}/lib/runner.nix { inherit pkgs lib; testers = pkgs.testers; };
 
-  nginxConfigTarget = import ${PROJECT_ROOT}/targets/config/nginx.nix { inherit lib; };
+  nginxConfigTarget = import ${PROJECT_ROOT}/targets/nginx/config.nix { inherit lib; };
   nginxBaseModule = import ${PROJECT_ROOT}/targets/nginx/module.nix;
   nginxProperties = import ${PROJECT_ROOT}/targets/nginx/properties.nix { inherit lib; };
   nginxTestScript = builtins.readFile ${PROJECT_ROOT}/targets/nginx/test-script.py;

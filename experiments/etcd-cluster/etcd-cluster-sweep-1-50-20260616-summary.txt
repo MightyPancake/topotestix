@@ -1,0 +1,5 @@
+etcd-cluster sweep 1..50
+passed=39 failed=11 total=50
+failed_seeds=5,7,20,21,25,29,30,34,38,42,49
+failure_class invalid-etcd-election-timeout-heartbeat-ratio=11
+cause=election-timeout=1000 with heartbeat-interval=250 violates etcd ratio requirement

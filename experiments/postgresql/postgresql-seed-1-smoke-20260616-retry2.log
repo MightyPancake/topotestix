@@ -1,0 +1,20 @@
+Running postgresql seed=1
+
+============================================================
+ TopoTestix Results
+ Seed: 1
+ Name: postgresql-seed-1
+============================================================
+  PASS  postgresql-primary-role
+  PASS  postgresql-standby-role
+  PASS  postgresql-standby-signal
+  PASS  postgresql-replicated-write-roundtrip
+  PASS  postgresql-replication-streaming
+  PASS  postgresql-standby-read-only
+  PASS  postgresql-primary-still-up
+  PASS  postgresql-standby-still-up
+
+ Overall: PASSED
+ Run dir: /home/freerat/projects/topotestix/.topotestix/runs/20260616-195632-postgresql-seed-1-postgresql-seed-1
+============================================================
+run_exit=0

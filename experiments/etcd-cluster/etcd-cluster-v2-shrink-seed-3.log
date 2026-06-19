@@ -1,0 +1,21 @@
+Verifying initial failure before shrinking...
+Trying config shrink etcd.services.etcd.extraConf.ELECTION_TIMEOUT -> 0
+Kept config shrink etcd.services.etcd.extraConf.ELECTION_TIMEOUT -> 0
+Final topology choices:
+{
+  ".etcdVlans": 0,
+  ".roles.etcd": 0
+}
+Final config choices:
+{
+  "etcd": {
+    ".services.etcd.extraConf.ELECTION_TIMEOUT": 0,
+    ".services.etcd.extraConf.HEARTBEAT_INTERVAL": 0,
+    ".services.etcd.extraConf.QUOTA_BACKEND_BYTES": 0,
+    ".services.etcd.extraConf.SNAPSHOT_COUNT": 0,
+    ".virtualisation.diskSize": 0,
+    ".virtualisation.memorySize": 0
+  }
+}
+Reproduce with:
+topotestix orchestrator run etcd-cluster --seed 3 --name etcd-cluster-shrink-3 --project-root /home/freerat/projects/topotestix --topology-target /home/freerat/projects/topotestix/targets/topology/etcd-cluster.nix --config-target /home/freerat/projects/topotestix/targets/config/etcd-cluster.nix --base-module /home/freerat/projects/topotestix/targets/etcd-cluster/module.nix --test-script /home/freerat/projects/topotestix/targets/etcd-cluster/test-script.py --properties /home/freerat/projects/topotestix/targets/etcd-cluster/properties.nix --topology-choices '{".etcdVlans": 0, ".roles.etcd": 0}' --config-choices '{"etcd": {".services.etcd.extraConf.ELECTION_TIMEOUT": 0, ".services.etcd.extraConf.HEARTBEAT_INTERVAL": 0, ".services.etcd.extraConf.QUOTA_BACKEND_BYTES": 0, ".services.etcd.extraConf.SNAPSHOT_COUNT": 0, ".virtualisation.diskSize": 0, ".virtualisation.memorySize": 0}}'

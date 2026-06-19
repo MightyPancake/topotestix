@@ -1,0 +1,5 @@
+etcd-cluster v2 sweep 1..50
+passed=37 failed=13 total=50
+failed_seeds=3,6,12,13,14,28,33,34,38,40,41,42,43
+failure_classes={"quota-backend-too-small-for-write-burst": 13}
+outcomes_by_quota={"2097152": {"failed": 13, "passed": 0}, "67108864": {"failed": 0, "passed": 17}, "8388608": {"failed": 0, "passed": 20}}

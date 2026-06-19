@@ -1,0 +1,9 @@
+{
+  "completed": 10,
+  "failed": 0,
+  "failures": [],
+  "skipped": 0,
+  "target": "postgresql",
+  "total": 10
+}
+sweep_exit=0

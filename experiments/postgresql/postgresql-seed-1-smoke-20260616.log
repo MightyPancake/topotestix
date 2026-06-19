@@ -1,0 +1,11 @@
+Running postgresql seed=1
+
+============================================================
+ TopoTestix Results
+ Seed: 1
+ Name: postgresql-seed-1
+============================================================
+
+ VM test FAILED (build error)
+ Run dir: /home/freerat/projects/topotestix/.topotestix/runs/20260616-195408-postgresql-seed-1-postgresql-seed-1
+run_exit=1

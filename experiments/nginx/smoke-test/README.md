@@ -27,7 +27,7 @@ result/report.json  ──→  [{"name": "nginx-responds-to-http", "status": "pa
 
 ### Configuration space
 
-The config target (`targets/config/nginx.nix`) defines the fuzzable dimensions:
+The config target (`targets/nginx/config.nix`) defines the fuzzable dimensions:
 
 | Option | Variants |
 |---|---|
@@ -56,7 +56,7 @@ Seed `"5"` produces `services.nginx.enable = true`, which is required for the ng
 | `targets/nginx/module.nix` | Base NixOS config: enables nginx with localhost virtualHost |
 | `targets/nginx/test-script.py` | Python test procedure: create web root, wait for nginx |
 | `targets/nginx/properties.nix` | Property: `responds_to_http` — checks HTTP 200 on localhost |
-| `targets/config/nginx.nix` | Fuzz target spec: memory size, ssh, nginx enable |
+| `targets/nginx/config.nix` | Fuzz target spec: memory size, ssh, nginx enable |
 | `flake.nix` | Wires fuzzer → merge → runner, exposes `nixosTests.nginx-smoke` |
 
 ### Composed testScript
@@ -88,7 +88,7 @@ This is correct behavior — the property detects that nginx was not available.
 Use the provided script:
 
 ```bash
-cd experiments/nginx-smoke-test
+cd experiments/nginx/smoke-test
 ./run-smoke-test.sh        # default seed 5 (nginx enabled, should pass)
 ./run-smoke-test.sh 1       # seed 1 (nginx disabled, expect failure)
 ./run-smoke-test.sh 5       # seed 5 (nginx enabled, should pass)
