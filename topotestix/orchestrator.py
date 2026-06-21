@@ -1,8 +1,8 @@
 import argparse
 import json
+import logging
 import os
 import shlex
-import shutil
 import sys
 import threading
 import time
@@ -257,13 +257,24 @@ def run_once(
     return passed, report, run_dir, result
 
 
-def run_once_events(*args, **kwargs) -> Iterator[Event]:
-    target = kwargs.get("target") or (args[1] if len(args) > 1 else None)
-    seed = kwargs.get("seed") or (args[2] if len(args) > 2 else None)
-    if target is None or seed is None:
-        raise ValueError("run_once_events requires target and seed")
+def run_once_events(
+    project_root: str,
+    target: Target,
+    seed: int,
+    name: str,
+    runs_dir: Optional[str] = None,
+) -> Iterator[Event]:
+    """Yield events for a single `run_once` call.
+
+    Signature mirrors the first five (required + one optional) parameters of
+    `run_once`.  Extra per-run overrides (`topology_choices`, `config_choices`)
+    are not needed here because `cmd_sweep` is the only caller and it does not
+    override choices at the individual-seed level.
+    """
     yield event("run_started", f"Running {target.name} seed={seed}", target=target.name, seed=seed)
-    passed, report, run_dir, result = run_once(*args, **kwargs)
+    passed, report, run_dir, result = run_once(
+        project_root, target, seed, name, runs_dir
+    )
     yield event(
         "build_finished", "Nix build finished", returncode=result.returncode, runDir=run_dir
     )
@@ -547,6 +558,11 @@ def reproduce_command(
 
 
 def print_summary(seed: int, name: str, report: list[dict], build_ok: bool, run_dir: str):
+    """Print a human-readable test report summary.
+
+    Outputs pass/fail per property plus an overall verdict.
+    Callers are responsible for gating this behind `--quiet`.
+    """
     print()
     print("=" * 60)
     print(" TopoTestix Results")
@@ -572,6 +588,19 @@ def print_summary(seed: int, name: str, report: list[dict], build_ok: bool, run_
     print(f" Overall: {'PASSED' if report_passed(report) else 'FAILED'}")
     print(f" Run dir: {run_dir}")
     print("=" * 60)
+
+
+logger = logging.getLogger("topotestix")
+
+
+def _verbose(msg: str) -> None:
+    """Print a diagnostic message at INFO level.
+
+    Routes the ~15 per-step prints inside `cmd_shrink` through
+    stdlib logging so they can be controlled by --quiet/--verbose
+    without scattering ``if args.verbose:`` everywhere.
+    """
+    logger.info(msg)
 
 
 def candidate_choice_maps(choices: dict):
@@ -668,7 +697,7 @@ def cmd_shrink(args, project_root: str) -> int:
     config_choices = inputs["configChoices"]
     name = args.name or f"{target.name}-shrink-{seed}"
 
-    print("Verifying initial failure before shrinking...")
+    _verbose("Verifying initial failure before shrinking...")
     passed, _report, _run_dir, _result = run_once(
         project_root, target, seed, name, args.output_dir, topology_choices, config_choices
     )
@@ -680,14 +709,14 @@ def cmd_shrink(args, project_root: str) -> int:
     while changed:
         changed = False
         for path, next_index, candidate in candidate_choice_maps(topology_choices):
-            print(f"Trying topology shrink {path} -> {next_index}")
+            _verbose(f"Trying topology shrink {path} -> {next_index}")
             passed, _report, _run_dir, _result = run_once(
                 project_root, target, seed, name, args.output_dir, candidate, config_choices
             )
             if not passed:
                 topology_choices = candidate
                 changed = True
-                print(f"Kept topology shrink {path} -> {next_index}")
+                _verbose(f"Kept topology shrink {path} -> {next_index}")
                 break
         if changed:
             continue
@@ -697,7 +726,7 @@ def cmd_shrink(args, project_root: str) -> int:
             ):
                 candidate_config_choices = dict(config_choices)
                 candidate_config_choices[role] = candidate_role_choices
-                print(f"Trying config shrink {role}{path} -> {next_index}")
+                _verbose(f"Trying config shrink {role}{path} -> {next_index}")
                 passed, _report, _run_dir, _result = run_once(
                     project_root,
                     target,
@@ -710,7 +739,7 @@ def cmd_shrink(args, project_root: str) -> int:
                 if not passed:
                     config_choices = candidate_config_choices
                     changed = True
-                    print(f"Kept config shrink {role}{path} -> {next_index}")
+                    _verbose(f"Kept config shrink {role}{path} -> {next_index}")
                     break
             if changed:
                 break
@@ -801,8 +830,3 @@ def cmd_sweep(args, project_root: str) -> int:
                     f"| total {total_time:.1f}s avg {avg_run_time:.1f}s"
                 )
     return 1 if failures else 0
-
-
-def ensure_linux_for_vm() -> None:
-    if sys.platform != "linux" and not shutil.which("nix"):
-        raise RuntimeError("Nix is required to run TopoTestix commands")

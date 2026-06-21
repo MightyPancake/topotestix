@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 import sys
 from typing import Optional
@@ -22,6 +23,25 @@ def add_common_target_overrides(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--base-module", default=None, help="Override base module path")
     parser.add_argument("--test-script", default=None, help="Override test script path")
     parser.add_argument("--properties", default=None, help="Override properties module path")
+
+
+def _configure_logging(args: argparse.Namespace) -> None:
+    """Set up stdlib logging based on --quiet / --verbose flags.
+
+    Default level is WARNING (no diagnostic output).  ``--verbose`` drops to
+    INFO so that the per-step prints inside `cmd_shrink` appear.  ``-q/--json``
+    suppresses everything since JSON mode is machine-parseable.
+    """
+    if getattr(args, "quiet", False) or getattr(args, "json", False):
+        logging.basicConfig(level=logging.CRITICAL)
+    elif getattr(args, "verbose", False):
+        logging.basicConfig(
+            level=logging.INFO,
+            stream=sys.stdout,
+            format="%(message)s",
+        )
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
 
 def add_run_common(parser: argparse.ArgumentParser) -> None:
@@ -136,12 +156,9 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def runs_dir(project_root: str) -> str:
-    return default_runs_dir(project_root)
-
 
 def cmd_runs(args, project_root: str) -> int:
-    store = RunStore(args.output_dir or runs_dir(project_root))
+    store = RunStore(args.output_dir or default_runs_dir(project_root))
     if args.runs_command == "list":
         runs = store.list_runs()
         if args.json:
@@ -169,6 +186,7 @@ def cmd_runs(args, project_root: str) -> int:
 def main(argv: Optional[list[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    _configure_logging(args)
     project_root = project_root_from_args(getattr(args, "project_root", None))
     try:
         if args.command == "targets":
